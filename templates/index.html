@@ -4,7 +4,7 @@
 
     <h1>This is the index page!</h1>
     {% for course in courses %}
-        {{ course.name }}
+        <a href="{% url 'courses:course_detail' course.slug %}">{{ course.name }}</a>
         <p>Teachers:
                 {% for teacher in course.teacher.all %}
                     {{ teacher.name }}{% if not forloop.last %}, {% endif %}

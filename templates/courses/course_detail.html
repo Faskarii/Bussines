@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% block body %}
+    {{ course.image }}
+    {{ course.description }}
+
+     <h2>Lesson</h2>
+    {% for lesson in lessons %}
+        {{ lesson.title }}
+        {{ lesson.video }}
+        {{ lesson.duration }}
+    {% endfor %}
+{% endblock %}

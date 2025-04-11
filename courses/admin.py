@@ -26,14 +26,20 @@ class CoursesAdmin(admin.ModelAdmin):
 
     display_categories.short_description = 'Categories'
 
+
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
-    list_display = ('name',)
+    list_display = ('name', )
 
 
 @admin.register(Lesson)
 class LessonAdmin(admin.ModelAdmin):
-    list_display = ('title', )
+    list_display = ('get_course_title', 'title')
+    list_filter = ('course',)
+
+    def get_course_title(self, obj):
+        return f"{obj.course.name}"
+    get_course_title.short_description = 'Course'
 
 
 @admin.register(Teacher)

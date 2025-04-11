@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, logout
 from .forms import SignUpForm
 from .forms import LoginForm
+from .models import User
 
 
 def signup(request):
@@ -35,3 +36,9 @@ def login_view(request):
 def logout_view(request):
     logout(request)
     return redirect('courses:home')
+    #TODO
+
+
+def profile(request, pk):
+    user = User.objects.get(pk=pk)
+    return render(request, 'users/profile.html', {'user':user})
