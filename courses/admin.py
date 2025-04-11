@@ -1,3 +1,41 @@
 from django.contrib import admin
+from .models import Course, Lesson, Category, Teacher
 
-# Register your models here.
+
+class LessonsInline(admin.TabularInline):
+    model = Lesson
+    fields = ('title', 'video', 'duration')
+    extra = 1
+
+
+@admin.register(Course)
+class CoursesAdmin(admin.ModelAdmin):
+    list_display = ('name', 'price', 'display_teachers', 'display_categories', 'is_published', 'created_at')
+    inlines = [LessonsInline]
+    # filter_horizontal = ('category', 'teacher')
+    search_fields = ('name', 'category__name', 'teacher__name')
+    list_filter = ('is_published', 'category', 'teacher')
+
+    def display_teachers(self, obj):
+        return ", ".join([teacher.name for teacher in obj.teacher.all()])
+
+    display_teachers.short_description = 'Teachers'
+
+    def display_categories(self, obj):
+        return ", ".join([category.name for category in obj.category.all()])
+
+    display_categories.short_description = 'Categories'
+
+@admin.register(Category)
+class CategoryAdmin(admin.ModelAdmin):
+    list_display = ('name',)
+
+
+@admin.register(Lesson)
+class LessonAdmin(admin.ModelAdmin):
+    list_display = ('title', )
+
+
+@admin.register(Teacher)
+class TeacherAdmin(admin.ModelAdmin):
+    list_display = ('name', )

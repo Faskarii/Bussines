@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+
+{% block body %}
+
+    <h1>This is the index page!</h1>
+    {% for course in courses %}
+        {{ course.name }}
+        <p>Teachers:
+                {% for teacher in course.teacher.all %}
+                    {{ teacher.name }}{% if not forloop.last %}, {% endif %}
+                {% empty %}
+                    No teachers assigned
+                {% endfor %}
+            </p>
+    {% endfor %}
+{% endblock %}
