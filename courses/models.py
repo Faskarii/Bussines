@@ -1,5 +1,10 @@
+from decimal import Decimal
+
+from django.core.serializers.json import DjangoJSONEncoder
 from django.db import models
 from django.utils.text import slugify
+from django.conf import settings
+import json
 
 
 class Category(models.Model):
@@ -30,6 +35,7 @@ class Course(models.Model):
     price = models.IntegerField(verbose_name="Course Price")
     image = models.ImageField(upload_to='course_images/', verbose_name="Course Image", null=True, blank=True)
     preview_video = models.FileField(upload_to='preview_videos/', null=True, blank=True)
+    liked_by = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='liked_courses', blank=True)
     is_published = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Created At")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Updated At")
@@ -53,4 +59,15 @@ class Lesson(models.Model):
 
     def __str__(self):
         return f"{self.title} - {self.course.name}"
+
+
+class Order(models.Model):
+    items = models.TextField()
+    name = models.CharField(max_length=200)
+    email = models.EmailField()
+    total = models.CharField(max_length=200)
+
+    def __str__(self):
+        return f"Order #{self.id} - {self.name}"
+
 

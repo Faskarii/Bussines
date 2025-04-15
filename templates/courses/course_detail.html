@@ -9,4 +9,28 @@
         {{ lesson.video }}
         {{ lesson.duration }}
     {% endfor %}
+
+    <div class="px-5 py-5">
+    {% for comment in course.comments.all %}
+    <b>{{ comment.posted_by }}</b>:{{ comment.body }}
+        <br>
+    {% endfor %}
+    </div>
+
+    <div class="px-5 py-5">
+        <form method="post">
+            {% csrf_token %}
+            <div class="mb-2">
+                <label>Add comment</label>
+            </div>
+            <div class="shadow border">{{ comment_form.body }}</div>
+            <div>
+                <input type="hidden" name="course_id" id="course_id" value="{{ course.id }}"></input>
+                <input type="hidden" name="posted_by"  value="{{ logged_user }}"></input>
+            </div>
+
+                <button type="submit" class="btn btn-success">Add</button>
+
+        </form>
+    </div>
 {% endblock %}

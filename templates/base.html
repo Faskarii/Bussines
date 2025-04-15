@@ -1,12 +1,64 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
+{#    <link rel="stylesheet" href="{% static 'sstyle.css' %}">#}
     <title>{% block title %}{% endblock %}</title>
 </head>
 <body>
+       <div class="container">
+        <!-- Navbar -->
+        <div class="row">
+            <div class="col-md-12">
+                <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+                    <a class="navbar-brand" href="#">Courses</a>
+                    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+                    <div class="collapse navbar-collapse" id="navbarNav">
+                        <ul class="navbar-nav">
+                            <li class="nav-item active">
+                                <a class="nav-link" href="#">Home</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="#">Features</a>
+                            </li>
+                            <li class="nav-item">
+                                <button id="cart" class="btn btn-secondary" data-toggle="popover" data-html="true" data-placement="bottom">Cart(0)</button>
+                            </li>
+                        </ul>
+                    </div>
+                </nav>
+            </div>
+        </div>
+
+        <!-- Search Form -->
+
+       </div>
     {% block body %}
 
     {% endblock %}
+
 </body>
+
+       {% block script %}
+       {% endblock %}
+<script>
+        document.addEventListener('DOMContentLoaded', function() {
+        try {
+            const cart = JSON.parse(localStorage.getItem('cart')) || {};
+            document.getElementById("cart").innerHTML = "Cart(" + Object.keys(cart).length + ")";
+        } catch (e) {
+            console.error("Error loading cart:", e);
+            document.getElementById("cart").innerHTML = "Cart(0)";
+        }
+    });
+
+</script>
 </html>

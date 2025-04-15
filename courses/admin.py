@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Course, Lesson, Category, Teacher
+from .models import Course, Lesson, Category, Teacher, Order
 
 
 class LessonsInline(admin.TabularInline):
@@ -45,3 +45,6 @@ class LessonAdmin(admin.ModelAdmin):
 @admin.register(Teacher)
 class TeacherAdmin(admin.ModelAdmin):
     list_display = ('name', )
+
+
+admin.site.register(Order)

@@ -41,4 +41,5 @@ def logout_view(request):
 
 def profile(request, pk):
     user = User.objects.get(pk=pk)
-    return render(request, 'users/profile.html', {'user':user})
+    liked_courses = request.user.liked_courses.all()
+    return render(request, 'users/profile.html', {'user':user, 'liked_courses':liked_courses})

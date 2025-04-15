@@ -1,4 +1,21 @@
 {% extends 'base.html' %}
 {% block body %}
     <h1>{{ user.username }}</h1>
+    <div class="liked-courses">
+    <h3>Your Liked Courses</h3>
+    {% if liked_courses %}
+        <div class="course-grid">
+            {% for course in liked_courses %}
+                <div class="course-card">
+                    <img src="{{ course.thumbnail.url }}" alt="{{ course.title }}">
+                    <h4>{{ course.title }}</h4>
+                    <p>{{ course.description|truncatechars:100 }}</p>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p>You haven't liked any courses yet.</p>
+    {% endif %}
+</div>
+
 {% endblock %}

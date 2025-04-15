@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     #apps
     'users.apps.UsersConfig',
     'courses.apps.CoursesConfig',
+    'lkncmmnt.apps.LkncmmntConfig',
 ]
 
 MIDDLEWARE = [
