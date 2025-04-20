@@ -1,64 +1,171 @@
 {% load static %}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fa" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.rtl.min.css">
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
-{#    <link rel="stylesheet" href="{% static 'sstyle.css' %}">#}
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #0066cc;
+            --secondary-color: #004d99;
+            --light-color: #ffffff;
+            --dark-color: #000000;
+        }
+        body {
+            font-family: 'Vazirmatn', system-ui, -apple-system, sans-serif;
+            direction: rtl;
+            text-align: right;
+        }
+        .navbar {
+            background-color: var(--primary-color) !important;
+            padding: 1rem 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .navbar-brand {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-right: 2rem;
+        }
+        .nav-link {
+            font-size: 1.1rem;
+            margin-left: 1.5rem;
+            transition: color 0.3s ease;
+        }
+        .nav-link:hover {
+            color: rgba(255,255,255,0.8) !important;
+        }
+        .btn-secondary {
+            background-color: var(--secondary-color);
+            border-color: var(--secondary-color);
+            padding: 0.5rem 1.5rem;
+            font-size: 1.1rem;
+        }
+        .btn-secondary:hover {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+        .container {
+            max-width: 1200px;
+            padding: 0 1.5rem;
+        }
+        .profile-avatar { width: 40px; height: 40px; object-fit: cover; }
+    </style>
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
     <title>{% block title %}{% endblock %}</title>
 </head>
 <body>
-       <div class="container">
-        <!-- Navbar -->
-        <div class="row">
-            <div class="col-md-12">
-                <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-                    <a class="navbar-brand" href="#">Courses</a>
-                    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-                        <span class="navbar-toggler-icon"></span>
-                    </button>
-                    <div class="collapse navbar-collapse" id="navbarNav">
-                        <ul class="navbar-nav">
-                            <li class="nav-item active">
-                                <a class="nav-link" href="#">Home</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" href="#">Features</a>
-                            </li>
-                            <li class="nav-item">
-                                <button id="cart" class="btn btn-secondary" data-toggle="popover" data-html="true" data-placement="bottom">Cart(0)</button>
-                            </li>
-                        </ul>
+    <div class="container-fluid px-0">
+        <nav class="navbar navbar-expand-lg navbar-dark">
+            <div class="container">
+                <a class="navbar-brand" href="#">دوره‌ها</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav me-auto">
+                        <li class="nav-item active">
+                            <a class="nav-link" href="{% url 'courses:home' %}">خانه</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'courses:home' %}">دوره‌ها</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'courses:view_cart' %}">
+                                سبد خرید
+                                <span class="badge bg-danger" id="cart-count">{{ cart_count }}</span>
+                            </a>
+                        </li>
+                    </ul>
+                    <div class="d-flex align-items-center">
+                        {% if user.is_authenticated %}
+                            <div class="dropdown">
+                                <a href="#" class="d-flex align-items-center text-decoration-none dropdown-toggle" id="userDropdown" data-bs-toggle="dropdown">
+                                    {% if user.profile.avatar %}
+                                        <img src="{{ user.profile.avatar.url }}" class="rounded-circle profile-avatar me-2" alt="Profile">
+                                    {% else %}
+                                        <img src="{% static 'images/default-avatar.png' %}" class="rounded-circle profile-avatar me-2" alt="Profile">
+                                    {% endif %}
+                                    <span class="me-1">{{ user.get_full_name|default:user.username }}</span>
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    <li>
+                                        <a class="dropdown-item" href="{% url 'accounts:profile' %}">
+                                            <i class="fas fa-user me-2"></i>پروفایل
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="{% url 'accounts:my_courses' %}">
+                                            <i class="fas fa-graduation-cap me-2"></i>دوره‌های من
+                                        </a>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <form method="post" action="{% url 'accounts:logout' %}" class="d-inline">
+                                            {% csrf_token %}
+                                            <button type="submit" class="dropdown-item text-danger" style="border: none; background: none; width: 100%; text-align: right;">
+                                                <i class="fas fa-sign-out-alt me-2"></i>خروج
+                                            </button>
+                                        </form>
+                                    </li>
+                                </ul>
+                            </div>
+                        {% else %}
+                            <a href="{% url 'login' %}" class="btn btn-outline-primary me-2">ورود</a>
+                            <a href="{% url 'users:signup' %}" class="btn btn-primary">ثبت نام</a>
+                        {% endif %}
                     </div>
-                </nav>
+                </div>
             </div>
-        </div>
+        </nav>
+    </div>
 
-        <!-- Search Form -->
+    <div class="container">
+        {% block body %}
+        {% endblock %}
+    </div>
 
-       </div>
-    {% block body %}
+    {% block script %}
+    <script>
+    function sendAjaxRequest(url, method, data, successCallback, errorCallback) {
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        
+        fetch(url, {
+            method: method,
+            headers: {
+                'X-CSRFToken': csrfToken,
+                'Content-Type': 'application/json'
+            },
+            credentials: 'same-origin',
+            body: JSON.stringify(data)
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(successCallback)
+        .catch(errorCallback);
+    }
 
-    {% endblock %}
+    function updateCartCount() {
+        fetch('{% url "courses:get_cart_count" %}')
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('cart-count').textContent = data.count;
+            })
+            .catch(error => console.error('Error updating cart count:', error));
+    }
 
-</body>
-
-       {% block script %}
-       {% endblock %}
-<script>
-        document.addEventListener('DOMContentLoaded', function() {
-        try {
-            const cart = JSON.parse(localStorage.getItem('cart')) || {};
-            document.getElementById("cart").innerHTML = "Cart(" + Object.keys(cart).length + ")";
-        } catch (e) {
-            console.error("Error loading cart:", e);
-            document.getElementById("cart").innerHTML = "Cart(0)";
-        }
+    document.addEventListener('DOMContentLoaded', function() {
+        updateCartCount();
     });
-
-</script>
+    </script>
+    {% endblock %}
+</body>
 </html>

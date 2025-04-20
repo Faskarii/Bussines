@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+
+{% block title %}سبد خرید{% endblock %}
+
+{% block body %}
+<div class="container mt-5">
+    <h1 class="mb-4">سبد خرید</h1>
+    
+    {% if cart %}
+        <div class="row">
+            <div class="col-md-8">
+                {% for course_id, item in cart.items %}
+                <div class="card mb-3" data-course-id="{{ course_id }}">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h5 class="card-title">{{ item.name }}</h5>
+                                <p class="card-text text-muted">{{ item.price|floatformat:0 }} تومان</p>
+                            </div>
+                            <div>
+                                <button class="btn btn-danger btn-sm remove-from-cart" onclick="removeFromCart('{{ course_id }}')">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">خلاصه سفارش</h5>
+                        <hr>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>جمع کل:</span>
+                            <span id="cart-total">{{ total|floatformat:0 }} تومان</span>
+                        </div>
+                        <a href="{% url 'courses:checkout' %}" class="btn btn-primary w-100 mt-3">
+                            پرداخت
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <div class="alert alert-info">
+            سبد خرید شما خالی است.
+        </div>
+    {% endif %}
+</div>
+
+<!-- Hidden CSRF Token -->
+{% csrf_token %}
+{% endblock %}
+
+{% block script %}
+<script>
+function removeFromCart(courseId) {
+    $.ajax({
+        url: `/cart/remove/${courseId}/`,
+        type: 'POST',
+        headers: {
+            'X-CSRFToken': $('[name=csrfmiddlewaretoken]').val()
+        },
+        success: function(response) {
+            if (response.status === 'success') {
+                // Update cart count
+                $.get('/cart/count/', function(data) {
+                    $('#cart-count').text(data.count);
+                });
+                
+                // Remove the item from the DOM
+                $(`[data-course-id="${courseId}"]`).remove();
+                
+                // Update total price
+                $('#cart-total').text(response.total + ' تومان');
+                
+                // If cart is empty, show empty cart message
+                if ($('.card.mb-3').length === 0) {
+                    $('.row').html(`
+                        <div class="alert alert-info">
+                            سبد خرید شما خالی است.
+                        </div>
+                    `);
+                }
+                
+                alert(response.message);
+            } else {
+                alert(response.message);
+            }
+        },
+        error: function(error) {
+            console.error('Error:', error);
+            alert('خطا در حذف از سبد خرید');
+        }
+    });
+}
+</script>
+{% endblock %} 

@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+
+{% block body %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <h2 class="mb-4 text-primary">دوره‌های سفارش داده شده</h2>
+            <div class="row">
+                {% for course_id, course in user_courses.items %}
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h3 class="card-title h5">{{ course.name }}</h3>
+                            <p class="card-text">تعداد سفارش: {{ convertToFarsiNumber(course.count) }} بار</p>
+                            <p class="card-text text-muted">آخرین سفارش: {{ course.last_ordered|date:"Y/m/d" }}</p>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-5">
+        <div class="col-12">
+            <h2 class="mb-4 text-primary">تاریخچه سفارشات</h2>
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>شماره سفارش</th>
+                            <th>تاریخ</th>
+                            <th>دوره‌ها</th>
+                            <th>مبلغ کل</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for order in orders %}
+                        <tr>
+                            <td>{{ convertToFarsiNumber(order.id) }}</td>
+                            <td>{{ order.created_at|date:"Y/m/d" }}</td>
+                            <td>
+                                <ul class="list-unstyled mb-0">
+                                    {% for name in order.get_course_names %}
+                                    <li>{{ name }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </td>
+                            <td>{{ order.total|floatformat:0|intcomma }} تومان</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-5">
+        <div class="col-12">
+            <h2 class="mb-4 text-primary">دوره‌های خریداری شده</h2>
+            <div class="row">
+                {% for course_id, course in paid_courses.items %}
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h4 class="card-title h5 mb-3">{{ course.name }}</h4>
+                            <p class="card-text">قیمت: {{ course.price|floatformat:0|intcomma }} تومان</p>
+                            <p class="card-text">تاریخ خرید: {{ course.purchase_date|date:"Y/m/d" }}</p>
+                            <p class="card-text">تعداد: {{ convertToFarsiNumber(course.quantity) }}</p>
+                            <p class="card-text text-muted">شماره سفارش: {{ convertToFarsiNumber(course.order_id) }}</p>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="col-12">
+                    <div class="alert alert-info text-center">
+                        هنوز دوره‌ای خریداری نکرده‌اید
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function convertToFarsiNumber(n) {
+    if (n === undefined || n === null) return '';
+    const farsiDigits = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
+    return n.toString().replace(/\d/g, x => farsiDigits[x]);
+}
+</script>
+{% endblock %}

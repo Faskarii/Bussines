@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+
+{% block title %}دوره‌های من{% endblock %}
+
+{% block body %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-12">
+            <h2 class="mb-4">دوره‌های من</h2>
+            
+            {% if courses %}
+                <div class="row">
+                    {% for course in courses %}
+                    <div class="col-md-4 mb-4">
+                        <div class="card h-100 border-0 shadow-sm">
+                            {% if course.image %}
+                                <img src="{{ course.image.url }}" class="card-img-top" alt="{{ course.name }}" style="height: 200px; object-fit: cover;">
+                            {% endif %}
+                            <div class="card-body">
+                                <h5 class="card-title">{{ course.name }}</h5>
+                                <p class="card-text text-muted small">{{ course.description|truncatechars:100 }}</p>
+                                
+                                <div class="d-grid">
+                                    <a href="{% url 'courses:course_detail' course.slug %}" class="btn btn-primary">
+                                        ادامه دوره
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <div class="mb-4">
+                        <i class="fas fa-graduation-cap fa-3x text-muted"></i>
+                    </div>
+                    <h4 class="text-muted">هنوز در هیچ دوره‌ای ثبت‌نام نکرده‌اید</h4>
+                    <p class="text-muted">برای مشاهده دوره‌های موجود به صفحه دوره‌ها مراجعه کنید</p>
+                    <a href="{% url 'courses:home' %}" class="btn btn-primary mt-3">
+                        مشاهده دوره‌ها
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

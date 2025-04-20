@@ -1,14 +1,14 @@
-from decimal import Decimal
+import json
 
-from django.core.serializers.json import DjangoJSONEncoder
 from django.db import models
 from django.utils.text import slugify
 from django.conf import settings
-import json
 
 
 class Category(models.Model):
     name = models.CharField(max_length=100)
+    description = models.TextField(blank=True)
+    slug = models.SlugField(unique=True)
 
     class Meta:
         verbose_name = 'Category'
@@ -27,47 +27,104 @@ class Teacher(models.Model):
 
 
 class Course(models.Model):
-    name = models.CharField(max_length=50, verbose_name="Course Name")
-    slug = models.SlugField(unique=True, blank=True, null=True)
-    category = models.ManyToManyField(Category, verbose_name='category')
-    teacher = models.ManyToManyField(Teacher, verbose_name='teacher')
-    description = models.TextField(max_length=2000, verbose_name="Course Description")
-    price = models.IntegerField(verbose_name="Course Price")
-    image = models.ImageField(upload_to='course_images/', verbose_name="Course Image", null=True, blank=True)
-    preview_video = models.FileField(upload_to='preview_videos/', null=True, blank=True)
-    liked_by = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='liked_courses', blank=True)
+    name = models.CharField(max_length=200)
+    description = models.TextField()
+    price = models.DecimalField(max_digits=10, decimal_places=2)
+    image = models.ImageField(upload_to='courses/', null=True, blank=True)
+    preview_video = models.FileField(upload_to='previews/', null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     is_published = models.BooleanField(default=False)
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Created At")
-    updated_at = models.DateTimeField(auto_now=True, verbose_name="Updated At")
+    teacher = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='courses_taught', null=True)
+    liked_by = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='liked_courses', blank=True)
+    category = models.ForeignKey('Category', on_delete=models.SET_NULL, null=True, related_name='courses')
+    slug = models.SlugField(unique=True, blank=True)
+
+    def __str__(self):
+        return self.name
+
+    @property
+    def enrolled_students(self):
+        return self.orderitem_set.filter(order__status='completed').values_list('order__user', flat=True).distinct().count()
 
     def save(self, *args, **kwargs):
         if not self.slug:
             self.slug = slugify(self.name)
         super().save(*args, **kwargs)
 
-    def __str__(self):
-        return self.name
-
 
 class Lesson(models.Model):
-    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='lessons', verbose_name="Course")
-    title = models.CharField(max_length=100, verbose_name="Lesson Title")
-    video = models.FileField(upload_to='lesson_videos/', verbose_name="Lesson Video", null=True, blank=True)
-    duration = models.IntegerField(verbose_name="Lesson Duration (in minutes)", default=0)
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Created At")
-    updated_at = models.DateTimeField(auto_now=True, verbose_name="Updated At")
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='lessons')
+    title = models.CharField(max_length=200)
+    content = models.TextField(blank=True, null=True)
+    video = models.FileField(upload_to='lessons/')
+    order = models.IntegerField(default=0)
+    duration = models.IntegerField(help_text='Duration in minutes')
+    completed_by = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='completed_lessons', blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['order']
 
     def __str__(self):
-        return f"{self.title} - {self.course.name}"
+        return f"{self.course.name} - {self.title}"
 
 
 class Order(models.Model):
-    items = models.TextField()
-    name = models.CharField(max_length=200)
-    email = models.EmailField()
-    total = models.CharField(max_length=200)
+    STATUS_CHOICES = (
+        ('pending', 'در انتظار پرداخت'),
+        ('completed', 'تکمیل شده'),
+        ('failed', 'ناموفق'),
+    )
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='orders')
+    courses = models.ManyToManyField(Course, through='OrderItem')
+    total_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"Order #{self.id} - {self.name}"
+        return f"Order #{self.id} by {self.user.username}"
 
 
+class OrderItem(models.Model):
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='items')
+    course = models.ForeignKey(Course, on_delete=models.CASCADE)
+    price = models.DecimalField(max_digits=10, decimal_places=2)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('order', 'course')
+
+    def __str__(self):
+        return f"{self.course.name} in Order #{self.order.id}"
+
+
+class Cart(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='carts')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Cart for {self.user.username}"
+
+    @property
+    def total_price(self):
+        return sum(item.total_price for item in self.items.all())
+
+
+class CartItem(models.Model):
+    cart = models.ForeignKey(Cart, on_delete=models.CASCADE, related_name='items')
+    course = models.ForeignKey(Course, on_delete=models.CASCADE)
+    quantity = models.PositiveIntegerField(default=1)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.quantity} x {self.course.name}"
+
+    @property
+    def total_price(self):
+        return self.course.price * self.quantity

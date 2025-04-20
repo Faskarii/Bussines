@@ -1,50 +1,38 @@
 from django.contrib import admin
-from .models import Course, Lesson, Category, Teacher, Order
-
-
-class LessonsInline(admin.TabularInline):
-    model = Lesson
-    fields = ('title', 'video', 'duration')
-    extra = 1
-
+from .models import Course, Lesson, Category, Order, OrderItem
 
 @admin.register(Course)
-class CoursesAdmin(admin.ModelAdmin):
-    list_display = ('name', 'price', 'display_teachers', 'display_categories', 'is_published', 'created_at')
-    inlines = [LessonsInline]
-    # filter_horizontal = ('category', 'teacher')
-    search_fields = ('name', 'category__name', 'teacher__name')
+class CourseAdmin(admin.ModelAdmin):
+    list_display = ('name', 'price', 'teacher', 'is_published', 'created_at')
     list_filter = ('is_published', 'category', 'teacher')
-
-    def display_teachers(self, obj):
-        return ", ".join([teacher.name for teacher in obj.teacher.all()])
-
-    display_teachers.short_description = 'Teachers'
-
-    def display_categories(self, obj):
-        return ", ".join([category.name for category in obj.category.all()])
-
-    display_categories.short_description = 'Categories'
-
-
-@admin.register(Category)
-class CategoryAdmin(admin.ModelAdmin):
-    list_display = ('name', )
-
+    search_fields = ('name', 'description')
+    prepopulated_fields = {'slug': ('name',)}
 
 @admin.register(Lesson)
 class LessonAdmin(admin.ModelAdmin):
-    list_display = ('get_course_title', 'title')
+    list_display = ('title', 'course', 'duration', 'created_at')
     list_filter = ('course',)
+    search_fields = ('title', 'content')
 
-    def get_course_title(self, obj):
-        return f"{obj.course.name}"
-    get_course_title.short_description = 'Course'
+@admin.register(Category)
+class CategoryAdmin(admin.ModelAdmin):
+    list_display = ('name',)
+    prepopulated_fields = {'slug': ('name',)}
 
+class OrderItemInline(admin.TabularInline):
+    model = OrderItem
+    extra = 0
+    readonly_fields = ('created_at',)
 
-@admin.register(Teacher)
-class TeacherAdmin(admin.ModelAdmin):
-    list_display = ('name', )
+@admin.register(Order)
+class OrderAdmin(admin.ModelAdmin):
+    list_display = ('id', 'user', 'total_amount', 'status', 'created_at')
+    list_filter = ('status', 'created_at')
+    search_fields = ('user__username', 'user__email')
+    inlines = [OrderItemInline]
 
-
-admin.site.register(Order)
+@admin.register(OrderItem)
+class OrderItemAdmin(admin.ModelAdmin):
+    list_display = ('order', 'course', 'price', 'created_at')
+    list_filter = ('order__status',)
+    search_fields = ('order__user__username', 'course__name') 

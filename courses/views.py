@@ -1,62 +1,112 @@
-from datetime import datetime
-
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
-
+from django.contrib.auth.decorators import login_required
 from .forms import CourseForm, LessonForm, TeacherForm
-from .models import Course, Lesson, Teacher, Order
+from .models import Course, Lesson, Teacher, Order, Cart, CartItem, OrderItem
 from django.core.paginator import Paginator
 from lkncmmnt.forms import CommentForm
 
 
 def index(request):
     courses = Course.objects.filter(is_published=True).prefetch_related('teacher')
+    logged_user = request.user
+
+    purchased_course_ids = []
+    if logged_user.is_authenticated:
+        completed_orders = Order.objects.filter(user=logged_user, status='completed')
+        for order in completed_orders:
+            purchased_course_ids.extend(order.courses.values_list('id', flat=True))
 
     # search code
     course_name = request.GET.get('name')
-    logged_user = request.user
     if course_name != '' and course_name is not None:
-        courses = courses.filter(title__icontains=course_name)
+        courses = courses.filter(name__icontains=course_name)
 
     # paginator code
-    paginator = Paginator(courses, 1)
+    paginator = Paginator(courses, 4)
     page = request.GET.get('page')
     courses = paginator.get_page(page)
-    return render(request, 'index.html', {'courses':courses, 'logged_user':logged_user})
+    
+    return render(request, 'index.html', {
+        'courses': courses,
+        'logged_user': logged_user,
+        'purchased_course_ids': purchased_course_ids
+    })
 
 
 def checkout(request):
     if request.method == "POST":
-        items = request.POST.get('items', "")
         name = request.POST.get('name', "")
         email = request.POST.get('email', "")
-        total = request.POST.get('total', "")
-        order = Order(items=items, name=name, email=email, total=total)
-        order.save()
+
+        cart = request.session.get('cart', {})
+        total = sum(float(item['price']) for item in cart.values())
+        
+        # Create order
+        order = Order.objects.create(
+            user=request.user if request.user.is_authenticated else None,
+            total_amount=total,
+            status='pending'
+        )
+        
+        # Create order items
+        for course_id, item in cart.items():
+            course = Course.objects.get(id=course_id)
+            OrderItem.objects.create(
+                order=order,
+                course=course,
+                price=float(item['price'])
+            )
+
+        request.session['cart'] = {}
+        request.session.modified = True
+
         return JsonResponse({
-            'success': True,
-            'clear_cart': True  # Signal frontend to clear
+            'status': 'success',
+            'order_id': order.id,
+            'redirect_url': '/accounts/profile/?from_checkout=true'
         })
-        redirect('courses:home')
-    return render(request, 'checkout.html')
+
+    cart = request.session.get('cart', {})
+    total_price = sum(float(item['price']) for item in cart.values())
+    total_items = len(cart)
+    
+    return render(request, 'checkout.html', {
+        'cart_items': cart.items(),
+        'total_price': total_price,
+        'total_items': total_items
+    })
 
 
-def courseDetail(request, slug):
-    logged_user = request.user
+def course_detail(request, slug):
+    course = get_object_or_404(Course, slug=slug)
+    lessons = course.lessons.all()
+    has_purchased = False
+    
+    if request.user.is_authenticated:
+        has_purchased = OrderItem.objects.filter(
+            order__user=request.user,
+            course=course
+        ).exists()
+    
     if request.method == 'POST':
-        comment_form = CommentForm(data=request.POST)
-        new_comment = comment_form.save(commit=False)
-        course_id = request.POST.get('course_id')
-        course = get_object_or_404(Course, id=course_id)
-        new_comment.course =course
-        new_comment.posted_by = f"{logged_user.username}"
-        new_comment.save()
-        return redirect('courses:course_detail', slug=slug)
+        comment_form = CommentForm(request.POST)
+        if comment_form.is_valid():
+            comment = comment_form.save(commit=False)
+            comment.course = course
+            comment.posted_by = request.user
+            comment.save()
+            return redirect('courses:course_detail', slug=slug)
     else:
         comment_form = CommentForm()
-    course = get_object_or_404(Course, slug=slug)
-    lessons = Lesson.objects.filter(course=course)
-    return render(request, 'courses/course_detail.html', {'course':course, 'lessons':lessons, 'comment_form':comment_form, 'logged_user':logged_user})
+    
+    context = {
+        'course': course,
+        'lessons': lessons,
+        'comment_form': comment_form,
+        'has_purchased': has_purchased,
+    }
+    return render(request, 'courses/course_detail.html', context)
 
 
 def createCourse(request):
@@ -70,85 +120,66 @@ def createCourse(request):
     return render(request, 'courses/create_course.html', {'form':form})
 
 
-def updateCourse(request, pk):
-    course = Course.objects.get(pk=pk)
-    form = CourseForm(request.POST or None, instance=course)
-
-    if form.is_valid():
-        form.save()
-        return redirect('courses:home')
-
-    return render(request, 'courses/create_course.html', {'form':form})
-
-
-def deleteCourse(request, pk):
-    course = Course.objects.get(pk=pk)
-    if request.method == 'POST':
-        course.delete()
-        return redirect('courses:home')
-    #ToDo
-    # function for this view
-
-
-def createLesson(reqeust):
-
-    if reqeust.method == 'POST':
-        form = LessonForm(reqeust.POST)
-        if form.is_valid():
-            form.save()
-            return redirect('courses:home')
-
-    else:
-        form = LessonForm()
-    return render(reqeust, 'courses/create_lesson.html', {'form': form})
+@login_required
+def add_to_cart(request, course_id):
+    if not request.user.is_authenticated:
+        return JsonResponse({'status': 'error', 'message': 'لطفا ابتدا وارد شوید'})
+    
+    course = get_object_or_404(Course, id=course_id)
+    cart = request.session.get('cart', {})
+    
+    if str(course_id) not in cart:
+        cart[str(course_id)] = {
+            'name': course.name,
+            'price': str(course.price),
+            'image': course.image.url if course.image else ''
+        }
+        request.session['cart'] = cart
+        request.session.modified = True
+        return JsonResponse({
+            'status': 'success',
+            'message': 'دوره با موفقیت به سبد خرید اضافه شد',
+            'count': len(cart)
+        })
+    return JsonResponse({
+        'status': 'error',
+        'message': 'این دوره قبلا به سبد خرید اضافه شده است',
+        'count': len(cart)
+    })
 
 
-def updateLesson(request, pk):
-    lesson = Lesson.objects.get(pk=pk)
-    form = LessonForm(request.POST or None, instance=lesson)
-    if form.is_valid():
-        form.save()
-        return redirect('courses:home')
-    return render(request, 'courses/create_lesson.html', {'form':form})
+@login_required
+def remove_from_cart(request, course_id):
+    cart = request.session.get('cart', {})
+    if str(course_id) in cart:
+        del cart[str(course_id)]
+        request.session['cart'] = cart
+        request.session.modified = True
+        return JsonResponse({
+            'status': 'success',
+            'message': 'دوره با موفقیت از سبد خرید حذف شد',
+            'count': len(cart)
+        })
+    return JsonResponse({
+        'status': 'error',
+        'message': 'این دوره در سبد خرید وجود ندارد',
+        'count': len(cart)
+    })
 
 
-def deleteLesson(request, pk):
-    lesson = Lesson.objects.get(pk=pk)
-    if request.method == 'POST':
-        lesson.delete()
-        return redirect('courses:home')
-    #TODO
-    # function for this view
+@login_required
+def view_cart(request):
+    cart = request.session.get('cart', {})
+    total = sum(float(item['price']) for item in cart.values())
+    
+    return render(request, 'courses/cart.html', {
+        'cart': cart,
+        'total': total
+    })
 
 
-def createTeacher(request):
-    if request.method == 'POST':
-        form = TeacherForm(request.POST)
-        if form.is_valid():
-            form.save()
-            return redirect('courses:home')
-
-    else:
-        form = TeacherForm()
-    return render(request, 'courses/create_teacher.html', {'form':form})
-
-
-def updateTeacher(request, pk):
-    teacher = Teacher.objects.get(pk=pk)
-    form = TeacherForm(request.POST or None, instance=teacher)
-    if form.is_valid():
-        form.save()
-        return redirect('courses:home')
-    return render(request, 'courses/create_teacher.html', {'form':form})
-
-
-def deleteTeacher(request, pk):
-    teacher = Teacher.objects.get(pk=pk)
-    if request.method == 'POST':
-        teacher.delete()
-        return redirect('courses:home')
-
-    #TODO
-    #function for this view
+def get_cart_count(request):
+    cart = request.session.get('cart', {})
+    return JsonResponse({'count': len(cart)})
 
 

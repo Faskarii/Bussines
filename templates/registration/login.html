@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+
+{% block title %}ورود به سیستم{% endblock %}
+
+{% block body %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <h2 class="text-center mb-4">ورود به سیستم</h2>
+                    
+                    {% if form.errors %}
+                        <div class="alert alert-danger">
+                            نام کاربری یا رمز عبور اشتباه است. لطفاً دوباره تلاش کنید.
+                        </div>
+                    {% endif %}
+                    
+                    <form method="post" action="{% url 'login' %}">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="id_username" class="form-label">نام کاربری</label>
+                            <input type="text" name="username" id="id_username" class="form-control" required autofocus>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="id_password" class="form-label">رمز عبور</label>
+                            <input type="password" name="password" id="id_password" class="form-control" required>
+                        </div>
+                        
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" name="remember" id="id_remember" class="form-check-input">
+                            <label class="form-check-label" for="id_remember">مرا به خاطر بسپار</label>
+                        </div>
+                        
+                        <input type="hidden" name="next" value="{{ next }}">
+                        
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">ورود</button>
+                        </div>
+                    </form>
+                    
+                    <div class="text-center mt-3">
+                        <p class="mb-0">
+                            <a href="{% url 'users:signup' %}" class="text-decoration-none">حساب کاربری ندارید؟ ثبت نام کنید</a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    border-radius: 10px;
+}
+.form-control {
+    border-radius: 5px;
+}
+.btn-primary {
+    padding: 0.5rem 1rem;
+    border-radius: 5px;
+}
+</style>
+{% endblock %} 

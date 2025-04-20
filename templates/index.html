@@ -1,198 +1,307 @@
-{% extends 'base.html' %}
+{% extends 'base.html' %} {% block body %}
+<style>
+  .course-card {
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s;
+  }
+  .course-card:hover {
+    transform: translateY(-5px);
+  }
+  .discount-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background-color: #ff4757;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-weight: bold;
+    z-index: 1;
+  }
+  .course-image {
+    height: 180px;
+    object-fit: cover;
+  }
+  .course-info {
+    padding: 15px;
+  }
+  .course-duration {
+    color: #666;
+    font-size: 0.9rem;
+  }
+  .course-price {
+    color: #2ecc71;
+    font-weight: bold;
+    font-size: 1.1rem;
+  }
+  .course-instructor {
+    color: #666;
+    font-size: 0.9rem;
+  }
+</style>
 
-{% block body %}
-     <div class="row m-5">
-            <div class="col-md-12">
-                <form class="card card-sm">
-                    <div class="card-body row no-gutters align-items-center">
-                        <div class="col">
-                            <input type="search" name="item_name" placeholder="Search for products" class="form-control form-control-borderless">
-                        </div>
-                        <div class="col-auto">
-                            <button class="btn btn-success" type="submit">Search</button>
-                        </div>
-                    </div>
-                </form>
-            </div>
+<div class="row m-5">
+  <div class="col-md-12">
+    <form class="card card-sm">
+      <div class="card-body row no-gutters align-items-center">
+        <div class="col">
+          <input
+            type="search"
+            name="name"
+            placeholder="جستجوی محصولات"
+            class="form-control form-control-borderless"
+          />
         </div>
-    <div class="row m-5">
-            {% for course in courses %}
-            <div class="col-md-3">
-                <div class="card">
-                    <img src="{{ course.image }}" class="card-img-top">
-                    <div class="card-body">
-                        <div>
-                            <p>Teachers:
-                            {% for teacher in course.teacher.all %}
-                                {{ teacher.name }}{% if not forloop.last %}, {% endif %}
-                            {% empty %}
-                                No teachers assigned
-                            {% endfor %}
-                            </p>
-                        </div>
-                        <div id="nm{{ course.id }}" class="card-title">{{ course.name }}</div>
-                        <div id="price{{ course.id }}" class="card-text">{{ course.price }}</div>
-                        <div class="px-6 py-4">
-                            <div class="icon-container flex gap-3">
-                                <a id="{{ course.id }}" class="btn-like">
-                                    {% if logged_user in course.liked_by.all %}
-                                    <img class="w-5 h-5" src="/static/users/images/redheart.png" alt="">
-                                    {% else %}
-                                    <img class="w-5 h-5" src="/static/users/images/like.png" alt="">
-                                    {% endif %}
-                                </a>
-                        </div>
-                        </div>
-                        <a  href="{% url 'courses:course_detail' course.slug %}" class="btn btn-warning">View</a>
-                        <button id="{{ course.id }}" class="btn atc btn-warning">Add to cart</button>
-                    </div>
-                </div>
-            </div>
-            {% endfor %}
+        <div class="col-auto me-2">
+          <button class="btn btn-primary" type="submit">جستجو</button>
         </div>
+      </div>
+    </form>
+  </div>
+</div>
 
-    <!-- Pagination -->
-        <div class="row">
-            <div class="col-md-3 offset-md-4">
-                <ul class="pagination">
-                    {% if courses.has_previous %}
-                        <li class="page-item">
-                            <a class="page-link" href="?page={{ courses.previous_page_number }}">Previous</a>
-                        </li>
-                    {% endif %}
-                    <li class="page-item active">
-                        <a class="page-link" href="?page={{ courses.number }}">Current</a>
-                    </li>
-                    {% if courses.has_next %}
-                        <li class="page-item">
-                            <a class="page-link" href="?page={{ courses.next_page_number }}">Next</a>
-                        </li>
-                    {% endif %}
-                </ul>
-            </div>
+<div class="row m-5">
+  {% for course in courses %}
+  <div class="col-md-3 mb-4">
+    <div class="card course-card">
+      <div class="position-relative">
+        <img
+          src="/media/{{ course.image }}"
+          class="course-image w-100"
+          alt="{{ course.name }}"
+        />
+        <div
+          class="position-absolute bottom-0 start-0 end-0 p-2"
+          style="
+            background: linear-gradient(
+              to top,
+              rgba(0, 0, 0, 0.8),
+              transparent
+            );
+          "
+        >
+          <a
+            href="{% url 'courses:course_detail' course.slug %}"
+            class="text-decoration-none"
+          >
+            <h5 class="text-white mb-0" id="nm{{ course.id }}">
+              {{ course.name }}
+            </h5>
+          </a>
         </div>
+      </div>
+      <div class="course-info">
+        <div class="d-flex align-items-center mb-2 course-instructor">
+          <i class="fas fa-user-tie me-1"></i>
+          <span>
+            {% if course.teacher %}
+              {{ course.teacher.get_full_name|default:course.teacher.username }}
+            {% else %}
+              مدرسی تعیین نشده است
+            {% endif %}
+          </span>
+        </div>
+        <div class="d-flex justify-content-end mb-3">
+          <a id="{{ course.id }}" class="btn-like" style="cursor: pointer">
+            {% if logged_user in course.liked_by.all %}
+            <img
+              src="/static/users/images/redheart.png"
+              alt="پسندیده شده"
+              width="20"
+            />
+            {% else %}
+            <img src="/static/users/images/like.png" alt="پسندیدن" width="20" />
+            {% endif %}
+          </a>
+        </div>
+        <hr class="my-2" />
+        <div class="d-flex justify-content-between align-items-center">
+          <div class="course-price">{{ course.price|floatformat:0 }} تومان</div>
+          {% if course.id in purchased_course_ids %}
+            <button class="btn btn-success btn-sm" disabled>
+              <i class="fas fa-check me-1"></i>
+              خریداری شده
+            </button>
+          {% else %}
+            <button id="{{ course.id }}" class="btn btn-primary btn-sm atc">
+              <i class="fas fa-shopping-cart me-1"></i>
+              افزودن به سبد
+            </button>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
 
-{% endblock %}
+<!-- Pagination -->
+<div class="row">
+  <div class="col-md-3 offset-md-4">
+    <ul class="pagination justify-content-center">
+      {% if courses.has_previous %}
+      <li class="page-item">
+        <a class="page-link" href="?page={{ courses.previous_page_number }}"
+          >قبلی</a
+        >
+      </li>
+      {% endif %}
+      <li class="page-item active">
+        <a class="page-link" href="?page={{ courses.number }}"
+          >{{ courses.number }}</a
+        >
+      </li>
+      {% if courses.has_next %}
+      <li class="page-item">
+        <a class="page-link" href="?page={{ courses.next_page_number }}"
+          >بعدی</a
+        >
+      </li>
+      {% endif %}
+    </ul>
+  </div>
+</div>
 
-{% block script %}
-    <script type="text/javascript">
-    console.log('Cart script is working');
+<!-- Hidden CSRF Token -->
+{% csrf_token %} {% endblock %} {% block script %}
+<script
+  src="https://kit.fontawesome.com/your-code.js"
+  crossorigin="anonymous"
+></script>
+<script type="text/javascript">
+  // Function to animate cart icon
+  function animateCartIcon(button) {
+    const icon = button.querySelector("i");
+    icon.classList.add("fa-bounce");
+    setTimeout(() => {
+      icon.classList.remove("fa-bounce");
+    }, 1000);
+  }
 
-    // Initialize cart from localStorage or create an empty cart
-    let cart = JSON.parse(localStorage.getItem('cart')) || {};
+  function convertToFarsiNumber(n) {
+    const farsiDigits = ["۰", "۱", "۲", "۳", "۴", "۵", "۶", "۷", "۸", "۹"];
+    return n.toString().replace(/\d/g, (x) => farsiDigits[x]);
+  }
 
-    // Function to display cart in the popover
-   function DisplayCart(cart) {
-    let cartString = "<h5>Your Cart</h5>";
-    let totalItems = 0;
+  function showAlert(message, type = "success") {
+    // Remove any existing alerts
+    $(".alert-message").remove();
 
-    for (let item_id in cart) {
-        let item = cart[item_id];
-        let totalPrice = item[2] || 0;
-        cartString += `${item[1]} - Qty: ${item[0]}<br>`;
-        totalItems += item[0];
-    }
+    // Create new alert
+    const alertDiv = $(`
+            <div class="alert alert-${type} alert-dismissible fade show alert-message position-fixed top-0 start-50 translate-middle-x mt-3" role="alert">
+                <i class="fas fa-${
+                  type === "success"
+                    ? "check-circle"
+                    : type === "warning"
+                    ? "exclamation-triangle"
+                    : "times-circle"
+                } me-2"></i>
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        `);
 
-    cartString += "<div class='text-center'>";
-    cartString += "<a href='/checkout' class='btn btn-warning btn-sm mt-2'>Checkout</a>";
-    cartString += "</div>";
+    // Add alert to body
+    $("body").append(alertDiv);
 
-    // Update popover
-    $('#cart').popover('dispose').popover({
-        trigger: 'click',
-        container: 'body',
-        html: true,
-        content: cartString
-    });
+    // Auto dismiss after 3 seconds
+    setTimeout(() => {
+      alertDiv.alert("close");
+    }, 3000);
+  }
 
-    // Update cart counter
-    $('#cart').html(`Cart(${totalItems})`);
-
-
-    // Force popover to display
-    {#$('#cart').popover('show');#}
-}
-
-$(document).on('click', '.atc', function () {
+  function addToCart(courseId) {
     console.log("Add to cart button clicked");
-    let item_id = this.id.toString();
-    console.log("Item ID:", item_id);
+    console.log("Item ID:", courseId);
 
-    // Get product details from the DOM
-    let priceElement = document.getElementById("price" + item_id);
-    let nameElement = document.getElementById("nm" + item_id);
-
-    if (!priceElement || !nameElement) {
-        console.error("Product details not found for item ID:", item_id);
-        return;
-    }
-
-    {#let price = parseFloat(priceElement.innerHTML);#}
-    let name = nameElement.innerHTML;
-
-    // Update cart
-    if (cart[item_id] !== undefined) {
-        cart[item_id][0] += 1; // Increment quantity
-        cart[item_id][2] += parseFloat(document.getElementById("price" + item_id).innerHTML); // Update total price
-    } else {
-        price = parseFloat(document.getElementById("price" + item_id).innerHTML);
-        cart[item_id] = [1, name, price]; // Add new item to cart
-    }
-
-    console.log("Updated Cart:", cart);
-    localStorage.setItem('cart', JSON.stringify(cart));
-
-    // Update cart button text
-    document.getElementById("cart").innerHTML = "Cart(" + Object.keys(cart).length + ")";
-
-    // Refresh popover content
-    DisplayCart(cart);
-});
-
-$(document).ready(function () {
-    $('#cart').popover({
-        trigger: 'click',
-        container: 'body',
-        html: true
+    $.ajax({
+      url: `/cart/add/${courseId}/`,
+      type: "POST",
+      headers: {
+        "X-CSRFToken": $("[name=csrfmiddlewaretoken]").val(),
+      },
+      success: function (response) {
+        if (response.status === "success") {
+          // Update cart count
+          $.get("/cart/count/", function (data) {
+            $("#cart-count").text(data.count);
+          });
+          showAlert(
+            "<strong>موفق!</strong> دوره با موفقیت به سبد خرید اضافه شد"
+          );
+        } else {
+          showAlert("<strong>هشدار!</strong> " + response.message, "warning");
+        }
+      },
+      error: function (error) {
+        console.error("Error:", error);
+        showAlert("<strong>خطا!</strong> خطا در افزودن به سبد خرید", "danger");
+      },
     });
+  }
 
-    // Display cart on page load
-    DisplayCart(cart);
-});
+  // Add click event listener to all add to cart buttons
+  $(document).ready(function () {
+    $(".atc").click(function () {
+      const courseId = $(this).attr("id");
+      addToCart(courseId);
+    });
+  });
 
-
-// like function
-console.log('The like is working');
-$(document).ready(function() {
+  console.log("The like is working");
+  $(document).ready(function () {
     window.CSRF_TOKEN = "{{ csrf_token }}";
 
-    $(document).on('click', '.btn-like', function() {
-        var $btn = $(this);
-        var course_id = this.id;
+    $(document).on("click", ".btn-like", function () {
+      var $btn = $(this);
+      var course_id = this.id;
 
-        $.ajax({
-            method: "POST",
-            url: '/like',
-            data: {
-                course_id: course_id,
-                csrfmiddlewaretoken: window.CSRF_TOKEN
-            },
-            success: function(response) {
-                // Update heart icon
-                var imgSrc = response.liked ?
-                    '/static/users/images/redheart.png' :
-                    '/static/users/images/like.png';
-                $btn.find('img').attr('src', imgSrc);
-
-                // Optional: Update like count if you have one
-                // $('.like-count').text(response.count);
-            },
-            error: function(xhr) {
-                console.error('Error:', xhr.responseText);
-            }
-        });
+      $.ajax({
+        method: "POST",
+        url: "/like",
+        data: {
+          course_id: course_id,
+          csrfmiddlewaretoken: window.CSRF_TOKEN,
+        },
+        success: function (response) {
+          var imgSrc = response.liked
+            ? "/static/users/images/redheart.png"
+            : "/static/users/images/like.png";
+          $btn.find("img").attr("src", imgSrc);
+        },
+        error: function (xhr) {
+          console.error("Error:", xhr.responseText);
+        },
+      });
     });
-});
-
+  });
 </script>
+
+<style>
+  .toast-container {
+    z-index: 9999;
+  }
+
+  .btn-success {
+    background-color: #28a745;
+    border-color: #28a745;
+  }
+
+  .fa-bounce {
+    animation: fa-bounce 1s infinite;
+  }
+
+  @keyframes fa-bounce {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-5px);
+    }
+  }
+</style>
 {% endblock %}

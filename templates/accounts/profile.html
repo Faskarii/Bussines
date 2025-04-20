@@ -1,0 +1,216 @@
+{% extends 'base.html' %}
+
+{% block body %}
+<div class="container mt-5">
+    <div class="row">
+        <!-- User Info Sidebar -->
+        <div class="col-lg-3">
+            <div class="card border-0 shadow-sm text-center">
+                <div class="card-body">
+                    <div class="mb-4">
+                        {% if user.profile.avatar %}
+                            <img src="{{ user.profile.avatar.url }}" class="rounded-circle img-thumbnail" style="width: 150px; height: 150px; object-fit: cover;" alt="Profile Picture">
+                        {% else %}
+                            <div class="rounded-circle img-thumbnail d-flex align-items-center justify-content-center" style="width: 150px; height: 150px; background-color: #f8f9fa; border: 1px solid #dee2e6;">
+                                <i class="fas fa-user fa-3x text-secondary"></i>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <h4 class="mb-0">{{ user.get_full_name }}</h4>
+                    <p class="text-muted">{{ user.email }}</p>
+                    <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#editProfileModal">
+                        <i class="fas fa-edit me-1"></i>ویرایش پروفایل
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="col-lg-9">
+            <!-- Navigation Tabs -->
+            <ul class="nav nav-tabs mb-4" id="profileTabs" role="tablist">
+                <li class="nav-item">
+                    <a class="nav-link {% if active_tab == 'courses' %}active{% endif %}" id="courses-tab" data-bs-toggle="tab" href="#courses" role="tab">
+                        <i class="fas fa-graduation-cap me-1"></i>دوره‌های من
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if active_tab == 'liked' %}active{% endif %}" id="liked-tab" data-bs-toggle="tab" href="#liked" role="tab">
+                        <i class="fas fa-heart me-1"></i>علاقه‌مندی‌ها
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if active_tab == 'orders' %}active{% endif %}" id="orders-tab" data-bs-toggle="tab" href="#orders" role="tab">
+                        <i class="fas fa-shopping-cart me-1"></i>تاریخچه سفارشات
+                    </a>
+                </li>
+            </ul>
+
+            <!-- Tab Contents -->
+            <div class="tab-content" id="profileTabsContent">
+                <!-- Purchased Courses -->
+                <div class="tab-pane fade {% if active_tab == 'courses' %}show active{% endif %}" id="courses" role="tabpanel">
+                    <div class="row">
+                        {% for course in purchased_courses %}
+                        <div class="col-md-6 mb-4">
+                            <div class="card border-0 shadow-sm h-100">
+                                <img src="/media/{{ course.image }}" class="card-img-top" alt="{{ course.name }}" style="height: 200px; object-fit: cover;">
+                                <div class="card-body">
+                                    <h5 class="card-title">{{ course.name }}</h5>
+                                    <p class="card-text text-muted small">{{ course.description|truncatechars:100 }}</p>
+                                    <a href="{% url 'courses:course_detail' course.id %}" class="btn btn-primary btn-sm">مشاهده دوره</a>
+                                </div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="col-12">
+                            <div class="alert alert-info">
+                                هنوز دوره‌ای خریداری نکرده‌اید.
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Liked Courses -->
+                <div class="tab-pane fade {% if active_tab == 'liked' %}show active{% endif %}" id="liked" role="tabpanel">
+                    <div class="row">
+                        {% for course in liked_courses %}
+                        <div class="col-md-6 mb-4">
+                            <div class="card border-0 shadow-sm h-100">
+                                <img src="/media/{{ course.image }}" class="card-img-top" alt="{{ course.name }}" style="height: 200px; object-fit: cover;">
+                                <div class="card-body">
+                                    <h5 class="card-title">{{ course.name }}</h5>
+                                    <p class="card-text text-muted small">{{ course.description|truncatechars:100 }}</p>
+                                    <a href="{% url 'courses:course_detail' course.slug %}" class="btn btn-primary btn-sm">مشاهده دوره</a>
+                                </div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="col-12">
+                            <div class="alert alert-info">
+                                هنوز دوره‌ای را لایک نکرده‌اید.
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Order History -->
+                <div class="tab-pane fade {% if active_tab == 'orders' %}show active{% endif %}" id="orders" role="tabpanel">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>شماره سفارش</th>
+                                    <th>تاریخ</th>
+                                    <th>مبلغ</th>
+                                    <th>وضعیت</th>
+                                    <th>جزئیات</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for order in orders %}
+                                <tr>
+                                    <td>#{{ order.id }}</td>
+                                    <td>{{ order.created_at|date:"Y/m/d" }}</td>
+                                    <td>{{ order.total_amount }} تومان</td>
+                                    <td>
+                                        <span class="badge {% if order.status == 'completed' %}bg-success{% else %}bg-warning{% endif %}">
+                                            {{ order.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#orderModal{{ order.id }}">
+                                            مشاهده
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center">تاریخچه سفارشی موجود نیست.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Profile Modal -->
+<div class="modal fade" id="editProfileModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">ویرایش پروفایل</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form method="post" enctype="multipart/form-data" action="{% url 'accounts:update_profile' %}">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label">تصویر پروفایل</label>
+                        <input type="file" name="avatar" class="form-control" accept="image/*">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">نام</label>
+                        <input type="text" name="first_name" class="form-control" value="{{ user.first_name }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">نام خانوادگی</label>
+                        <input type="text" name="last_name" class="form-control" value="{{ user.last_name }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">ایمیل</label>
+                        <input type="email" name="email" class="form-control" value="{{ user.email }}">
+                    </div>
+                    <button type="submit" class="btn btn-primary">ذخیره تغییرات</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% for order in orders %}
+<!-- Order Detail Modal -->
+<div class="modal fade" id="orderModal{{ order.id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">جزئیات سفارش #{{ order.id }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>دوره</th>
+                                <th>قیمت</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in order.items.all %}
+                            <tr>
+                                <td>{{ item.course.name }}</td>
+                                <td>{{ item.price }} تومان</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <th>جمع کل</th>
+                                <th>{{ order.total_amount }} تومان</th>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% endblock %} 
