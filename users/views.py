@@ -4,6 +4,7 @@ from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib import messages
+from django.urls import reverse
 
 from courses.models import Order
 from .forms import SignUpForm
@@ -15,10 +16,12 @@ def signup(request):
     if request.method == 'POST':
         form = SignUpForm(request.POST)
         if form.is_valid():
-            user = form.save()
-            login(request, user)
-            messages.success(request, 'ثبت‌نام با موفقیت انجام شد!')
-            return redirect('index')
+            try:
+                user = form.save()
+                messages.success(request, 'ثبت‌نام شما با موفقیت انجام شد. اکنون می‌توانید وارد شوید.')
+                return redirect('login')
+            except Exception as e:
+                messages.error(request, 'خطا در ثبت‌نام. لطفاً دوباره تلاش کنید.')
     else:
         form = SignUpForm()
     return render(request, 'users/signup.html', {'form': form})

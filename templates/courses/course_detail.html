@@ -132,8 +132,13 @@
 </div>
 
 <style>
-.sticky-top { top: 20px; }
-.text-justify { text-align: justify; }
+.sticky-top { 
+    top: 20px; 
+    z-index: 1020; /* کمتر از z-index منوی کاربری */
+}
+.text-justify { 
+    text-align: justify; 
+}
 .alert-message {
     z-index: 9999;
     min-width: 300px;
@@ -148,6 +153,9 @@
 }
 .modal-body {
     padding: 0;
+}
+.dropdown-menu {
+    z-index: 1030; /* بیشتر از z-index استیکی */
 }
 </style>
 {% endblock %}

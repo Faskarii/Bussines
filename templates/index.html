@@ -9,27 +9,12 @@
   .course-card:hover {
     transform: translateY(-5px);
   }
-  .discount-badge {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    background-color: #ff4757;
-    color: white;
-    padding: 4px 12px;
-    border-radius: 20px;
-    font-weight: bold;
-    z-index: 1;
-  }
   .course-image {
     height: 180px;
     object-fit: cover;
   }
   .course-info {
     padding: 15px;
-  }
-  .course-duration {
-    color: #666;
-    font-size: 0.9rem;
   }
   .course-price {
     color: #2ecc71;
@@ -143,21 +128,15 @@
     <ul class="pagination justify-content-center">
       {% if courses.has_previous %}
       <li class="page-item">
-        <a class="page-link" href="?page={{ courses.previous_page_number }}"
-          >قبلی</a
-        >
+        <a class="page-link" href="?page={{ courses.previous_page_number }}">قبلی</a>
       </li>
       {% endif %}
       <li class="page-item active">
-        <a class="page-link" href="?page={{ courses.number }}"
-          >{{ courses.number }}</a
-        >
+        <a class="page-link" href="?page={{ courses.number }}">{{ courses.number }}</a>
       </li>
       {% if courses.has_next %}
       <li class="page-item">
-        <a class="page-link" href="?page={{ courses.next_page_number }}"
-          >بعدی</a
-        >
+        <a class="page-link" href="?page={{ courses.next_page_number }}">بعدی</a>
       </li>
       {% endif %}
     </ul>
@@ -165,58 +144,25 @@
 </div>
 
 <!-- Hidden CSRF Token -->
-{% csrf_token %} {% endblock %} {% block script %}
-<script
-  src="https://kit.fontawesome.com/your-code.js"
-  crossorigin="anonymous"
-></script>
+{% csrf_token %} 
+{% endblock %} 
+
+{% block script %}
 <script type="text/javascript">
-  // Function to animate cart icon
-  function animateCartIcon(button) {
-    const icon = button.querySelector("i");
-    icon.classList.add("fa-bounce");
-    setTimeout(() => {
-      icon.classList.remove("fa-bounce");
-    }, 1000);
-  }
-
-  function convertToFarsiNumber(n) {
-    const farsiDigits = ["۰", "۱", "۲", "۳", "۴", "۵", "۶", "۷", "۸", "۹"];
-    return n.toString().replace(/\d/g, (x) => farsiDigits[x]);
-  }
-
   function showAlert(message, type = "success") {
-    // Remove any existing alerts
     $(".alert-message").remove();
-
-    // Create new alert
     const alertDiv = $(`
-            <div class="alert alert-${type} alert-dismissible fade show alert-message position-fixed top-0 start-50 translate-middle-x mt-3" role="alert">
-                <i class="fas fa-${
-                  type === "success"
-                    ? "check-circle"
-                    : type === "warning"
-                    ? "exclamation-triangle"
-                    : "times-circle"
-                } me-2"></i>
-                ${message}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        `);
-
-    // Add alert to body
+      <div class="alert alert-${type} alert-dismissible fade show alert-message position-fixed top-0 start-50 translate-middle-x mt-3" role="alert">
+        <i class="fas fa-${type === "success" ? "check-circle" : type === "warning" ? "exclamation-triangle" : "times-circle"} me-2"></i>
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    `);
     $("body").append(alertDiv);
-
-    // Auto dismiss after 3 seconds
-    setTimeout(() => {
-      alertDiv.alert("close");
-    }, 3000);
+    setTimeout(() => alertDiv.alert("close"), 3000);
   }
 
   function addToCart(courseId) {
-    console.log("Add to cart button clicked");
-    console.log("Item ID:", courseId);
-
     $.ajax({
       url: `/cart/add/${courseId}/`,
       type: "POST",
@@ -225,40 +171,29 @@
       },
       success: function (response) {
         if (response.status === "success") {
-          // Update cart count
-          $.get("/cart/count/", function (data) {
+          $.get("/cart/count/", function(data) {
             $("#cart-count").text(data.count);
           });
-          showAlert(
-            "<strong>موفق!</strong> دوره با موفقیت به سبد خرید اضافه شد"
-          );
+          showAlert("<strong>موفق!</strong> دوره با موفقیت به سبد خرید اضافه شد");
         } else {
           showAlert("<strong>هشدار!</strong> " + response.message, "warning");
         }
       },
       error: function (error) {
-        console.error("Error:", error);
         showAlert("<strong>خطا!</strong> خطا در افزودن به سبد خرید", "danger");
       },
     });
   }
 
-  // Add click event listener to all add to cart buttons
   $(document).ready(function () {
     $(".atc").click(function () {
-      const courseId = $(this).attr("id");
-      addToCart(courseId);
+      addToCart($(this).attr("id"));
     });
-  });
 
-  console.log("The like is working");
-  $(document).ready(function () {
     window.CSRF_TOKEN = "{{ csrf_token }}";
-
     $(document).on("click", ".btn-like", function () {
       var $btn = $(this);
       var course_id = this.id;
-
       $.ajax({
         method: "POST",
         url: "/like",
@@ -281,27 +216,11 @@
 </script>
 
 <style>
-  .toast-container {
+  .alert-message {
     z-index: 9999;
-  }
-
-  .btn-success {
-    background-color: #28a745;
-    border-color: #28a745;
-  }
-
-  .fa-bounce {
-    animation: fa-bounce 1s infinite;
-  }
-
-  @keyframes fa-bounce {
-    0%,
-    100% {
-      transform: translateY(0);
-    }
-    50% {
-      transform: translateY(-5px);
-    }
+    min-width: 300px;
+    text-align: right;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
   }
 </style>
 {% endblock %}

@@ -96,7 +96,7 @@ def course_detail(request, slug):
             comment.course = course
             comment.posted_by = request.user
             comment.save()
-            return redirect('courses:course_detail', slug=slug)
+        return redirect('courses:course_detail', slug=slug)
     else:
         comment_form = CommentForm()
     
