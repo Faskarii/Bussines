@@ -12,7 +12,15 @@
         <div class="col-lg-8">
             <div class="card border-0 shadow-sm mb-4">
                 <div class="card-body">
-                    <h1 class="h2 mb-3">{{ course.name }}</h1>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h1 class="h2 mb-0">{{ course.name }}</h1>
+                        {% if request.user == course.teacher %}
+                        <a href="{% url 'courses:edit_course' course.slug %}" class="btn btn-outline-primary">
+                            <i class="fas fa-edit me-2"></i>
+                            ویرایش دوره
+                        </a>
+                        {% endif %}
+                    </div>
                     {% if course.image %}
                     <img src="{{ course.image.url }}" class="img-fluid rounded mb-4" alt="{{ course.name }}">
                     {% endif %}
@@ -43,10 +51,24 @@
                                             <h6 class="mb-1">{{ lesson.title }}</h6>
                                             <small class="text-muted">مدت زمان: {{ lesson.duration }} دقیقه</small>
                                         </div>
-                                        <a href="{{ lesson.video.url }}" class="btn btn-sm btn-primary" target="_blank">
-                                            <i class="fas fa-play me-1"></i>
-                                            مشاهده
-                                        </a>
+                                        <div class="d-flex gap-2">
+                                            {% if request.user == course.teacher %}
+                                                <a href="{% url 'courses:edit_lesson' lesson.id %}" class="btn btn-sm btn-outline-primary">
+                                                    <i class="fas fa-edit me-1"></i>
+                                                    ویرایش
+                                                </a>
+                                                <a href="{% url 'courses:delete_lesson' lesson.id %}" class="btn btn-sm btn-outline-danger">
+                                                    <i class="fas fa-trash me-1"></i>
+                                                    حذف
+                                                </a>
+                                            {% endif %}
+                                            {% if has_purchased or request.user == course.teacher %}
+                                                <a href="{{ lesson.video.url }}" class="btn btn-sm btn-primary" target="_blank">
+                                                    <i class="fas fa-play me-1"></i>
+                                                    مشاهده
+                                                </a>
+                                            {% endif %}
+                                        </div>
                                     </div>
                                 </div>
                                 {% empty %}
@@ -96,8 +118,9 @@
 
         <!-- سایدبار -->
         <div class="col-lg-4">
-            <div class="card border-0 shadow-sm sticky-top">
-                <div class="card-body">
+{#            <div class="card border-0 shadow-sm sticky-top">#}
+            <div class="card border-0 shadow-sm position-sticky mb-3" style="top: 20px;">
+            <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <h5 class="mb-0">قیمت دوره</h5>
                         <span class="h4 mb-0">{{ course.price|intcomma }} تومان</span>
@@ -131,7 +154,8 @@
                 </div>
             </div>
 
-            <div class="card border-0 shadow-sm">
+{#            <div class="card border-0 shadow-sm">#}
+        <div class="card border-0 shadow-sm position-sticky" style="top: 250px;">
                 <div class="card-body">
                     <h5 class="mb-3">اطلاعات دوره</h5>
                     <ul class="list-unstyled">

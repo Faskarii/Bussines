@@ -294,4 +294,74 @@ def create_lesson(request, course_id):
         'title': f'افزودن درس جدید به دوره {course.name}'
     })
 
+@login_required
+def edit_course(request, slug):
+    course = get_object_or_404(Course, slug=slug)
+    
+    # Check if user is the teacher of this course
+    if request.user != course.teacher:
+        messages.error(request, 'شما دسترسی به ویرایش این دوره را ندارید.')
+        return redirect('courses:course_detail', slug=slug)
+    
+    if request.method == 'POST':
+        form = CourseForm(request.POST, request.FILES, instance=course)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'دوره با موفقیت ویرایش شد.')
+            return redirect('courses:course_detail', slug=slug)
+    else:
+        form = CourseForm(instance=course)
+    
+    return render(request, 'courses/edit_course.html', {
+        'form': form,
+        'course': course
+    })
+
+
+@login_required
+def edit_lesson(request, lesson_id):
+    lesson = get_object_or_404(Lesson, id=lesson_id)
+    course = lesson.course
+    
+    # Check if user is the teacher of this course
+    if request.user != course.teacher:
+        messages.error(request, 'شما دسترسی به ویرایش این درس را ندارید.')
+        return redirect('courses:course_detail', slug=course.slug)
+    
+    if request.method == 'POST':
+        form = LessonForm(request.POST, request.FILES, instance=lesson)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'درس با موفقیت ویرایش شد.')
+            return redirect('courses:course_detail', slug=course.slug)
+    else:
+        form = LessonForm(instance=lesson)
+    
+    return render(request, 'courses/edit_lesson.html', {
+        'form': form,
+        'lesson': lesson,
+        'course': course
+    })
+
+
+@login_required
+def delete_lesson(request, lesson_id):
+    lesson = get_object_or_404(Lesson, id=lesson_id)
+    course = lesson.course
+    
+    # Check if user is the teacher of this course
+    if request.user != course.teacher:
+        messages.error(request, 'شما دسترسی به حذف این درس را ندارید.')
+        return redirect('courses:course_detail', slug=course.slug)
+    
+    if request.method == 'POST':
+        lesson.delete()
+        messages.success(request, 'درس با موفقیت حذف شد.')
+        return redirect('courses:course_detail', slug=course.slug)
+    
+    return render(request, 'courses/delete_lesson.html', {
+        'lesson': lesson,
+        'course': course
+    })
+
 
