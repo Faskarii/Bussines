@@ -74,7 +74,19 @@
     <div class="container-fluid px-0">
         <nav class="navbar navbar-expand-lg navbar-dark">
             <div class="container">
-                <a class="navbar-brand" href="#">دوره‌ها</a>
+                <!-- دسته‌بندی‌ها Dropdown -->
+                <div class="dropdown">
+                    <a class="navbar-brand dropdown-toggle" href="#" id="categoriesDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        دسته‌بندی‌ها
+                    </a>
+                    <ul class="dropdown-menu" aria-labelledby="categoriesDropdown">
+                        {% for category in categories %}
+                            {% if category.slug %}
+                                <li><a class="dropdown-item" href="{% url 'courses:category_courses' category.slug %}">{{ category.name }}</a></li>
+                            {% endif %}
+                        {% endfor %}
+                    </ul>
+                </div>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>

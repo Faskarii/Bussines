@@ -2,7 +2,7 @@ from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required, user_passes_test
 from .forms import CourseForm, LessonForm, TeacherForm
-from .models import Course, Lesson, Teacher, Order, Cart, CartItem, OrderItem, ContactMessage
+from .models import Course, Lesson, Teacher, Order, Cart, CartItem, OrderItem, ContactMessage, Category
 from django.core.paginator import Paginator
 from lkncmmnt.forms import CommentForm
 from django.contrib import messages
@@ -362,6 +362,38 @@ def delete_lesson(request, lesson_id):
     return render(request, 'courses/delete_lesson.html', {
         'lesson': lesson,
         'course': course
+    })
+
+
+def category_courses(request, slug):
+    category = get_object_or_404(Category, slug=slug)
+    courses = Course.objects.filter(is_published=True, category=category, slug__isnull=False).exclude(slug='').prefetch_related('teacher', 'liked_by')
+    logged_user = request.user
+
+    purchased_course_ids = []
+    pending_course_ids = []
+    taught_course_ids = []
+    
+    if logged_user.is_authenticated:
+        taught_course_ids = Course.objects.filter(teacher=logged_user).values_list('id', flat=True)
+        completed_orders = Order.objects.filter(user=logged_user, status='completed')
+        for order in completed_orders:
+            purchased_course_ids.extend(order.courses.values_list('id', flat=True))
+        pending_orders = Order.objects.filter(user=logged_user, status='pending')
+        for order in pending_orders:
+            pending_course_ids.extend(order.courses.values_list('id', flat=True))
+
+    paginator = Paginator(courses, 4)
+    page = request.GET.get('page')
+    courses = paginator.get_page(page)
+
+    return render(request, 'index.html', {
+        'courses': courses,
+        'logged_user': logged_user,
+        'purchased_course_ids': purchased_course_ids,
+        'pending_course_ids': pending_course_ids,
+        'taught_course_ids': taught_course_ids,
+        'selected_category': category,
     })
 
 

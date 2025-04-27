@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load humanize %}
+{% load static %}
 
 {% block body %}
 <style>
@@ -49,6 +50,14 @@
     </form>
   </div>
 </div>
+
+{% if selected_category %}
+<div class="row m-5">
+  <div class="col-md-12 text-center">
+    <h3>دوره‌های دسته‌بندی: {{ selected_category.name }}</h3>
+  </div>
+</div>
+{% endif %}
 
 {% if search_query and not courses %}
 <div class="row m-5">
@@ -106,12 +115,12 @@
           <a id="{{ course.id }}" class="btn-like" style="cursor: pointer">
             {% if logged_user in course.liked_by.all %}
             <img
-              src="static/users/images/redheart.png"
+              src="{% static 'users/images/redheart.png' %}"
               alt="پسندیده شده"
               width="20"
             />
             {% else %}
-            <img src="static/users/images/like.png" alt="پسندیدن" width="20" />
+            <img src="{% static 'users/images/like.png' %}" alt="پسندیدن" width="20" />
             {% endif %}
           </a>
         </div>

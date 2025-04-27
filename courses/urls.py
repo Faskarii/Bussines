@@ -19,4 +19,5 @@ urlpatterns = [
     path('cart/count/', views.get_cart_count, name='get_cart_count'),
     path('checkout/', views.checkout, name='checkout'),
     path('like', like_course, name="like"),
+    path('category/<slug:slug>/', views.category_courses, name='category_courses'),
 ]
