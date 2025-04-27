@@ -2,9 +2,10 @@ from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from .forms import CourseForm, LessonForm, TeacherForm
-from .models import Course, Lesson, Teacher, Order, Cart, CartItem, OrderItem
+from .models import Course, Lesson, Teacher, Order, Cart, CartItem, OrderItem, ContactMessage
 from django.core.paginator import Paginator
 from lkncmmnt.forms import CommentForm
+from django.contrib import messages
 
 
 def index(request):
@@ -12,10 +13,15 @@ def index(request):
     logged_user = request.user
 
     purchased_course_ids = []
+    pending_course_ids = []
     if logged_user.is_authenticated:
         completed_orders = Order.objects.filter(user=logged_user, status='completed')
         for order in completed_orders:
             purchased_course_ids.extend(order.courses.values_list('id', flat=True))
+            
+        pending_orders = Order.objects.filter(user=logged_user, status='pending')
+        for order in pending_orders:
+            pending_course_ids.extend(order.courses.values_list('id', flat=True))
 
     # search code
     course_name = request.GET.get('name')
@@ -30,7 +36,9 @@ def index(request):
     return render(request, 'index.html', {
         'courses': courses,
         'logged_user': logged_user,
-        'purchased_course_ids': purchased_course_ids
+        'purchased_course_ids': purchased_course_ids,
+        'pending_course_ids': pending_course_ids,
+        'search_query': course_name
     })
 
 
@@ -82,10 +90,18 @@ def course_detail(request, slug):
     course = get_object_or_404(Course, slug=slug)
     lessons = course.lessons.all()
     has_purchased = False
+    has_pending_order = False
     
     if request.user.is_authenticated:
         has_purchased = OrderItem.objects.filter(
             order__user=request.user,
+            order__status='completed',
+            course=course
+        ).exists()
+        
+        has_pending_order = OrderItem.objects.filter(
+            order__user=request.user,
+            order__status='pending',
             course=course
         ).exists()
     
@@ -105,6 +121,7 @@ def course_detail(request, slug):
         'lessons': lessons,
         'comment_form': comment_form,
         'has_purchased': has_purchased,
+        'has_pending_order': has_pending_order,
     }
     return render(request, 'courses/course_detail.html', context)
 
@@ -131,7 +148,7 @@ def add_to_cart(request, course_id):
     if str(course_id) not in cart:
         cart[str(course_id)] = {
             'name': course.name,
-            'price': str(course.price),
+            'price': course.price,
             'image': course.image.url if course.image else ''
         }
         request.session['cart'] = cart
@@ -170,7 +187,7 @@ def remove_from_cart(request, course_id):
 @login_required
 def view_cart(request):
     cart = request.session.get('cart', {})
-    total = sum(float(item['price']) for item in cart.values())
+    total = sum(item['price'] for item in cart.values())
     
     return render(request, 'courses/cart.html', {
         'cart': cart,
@@ -181,5 +198,22 @@ def view_cart(request):
 def get_cart_count(request):
     cart = request.session.get('cart', {})
     return JsonResponse({'count': len(cart)})
+
+
+def about(request):
+    return render(request, 'about.html')
+
+
+def contact(request):
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        email = request.POST.get('email')
+        subject = request.POST.get('subject')
+        message = request.POST.get('message')
+        contact_message = ContactMessage(name=name, email=email, subject=subject, message=message)
+        contact_message.save()
+        messages.success(request, 'پیام شما با موفقیت ارسال شد. به زودی با شما تماس خواهیم گرفت.')
+        return redirect('courses:contact')
+    return render(request, 'contact.html')
 
 

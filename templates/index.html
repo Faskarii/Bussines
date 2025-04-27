@@ -1,4 +1,7 @@
-{% extends 'base.html' %} {% block body %}
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block body %}
 <style>
   .course-card {
     border-radius: 12px;
@@ -47,6 +50,17 @@
   </div>
 </div>
 
+{% if search_query and not courses %}
+<div class="row m-5">
+  <div class="col-md-12 text-center">
+    <div class="alert alert-info">
+      <i class="fas fa-info-circle me-2"></i>
+      موردی با عبارت "{{ search_query }}" یافت نشد
+    </div>
+  </div>
+</div>
+{% endif %}
+
 <div class="row m-5">
   {% for course in courses %}
   <div class="col-md-3 mb-4">
@@ -92,27 +106,32 @@
           <a id="{{ course.id }}" class="btn-like" style="cursor: pointer">
             {% if logged_user in course.liked_by.all %}
             <img
-              src="/static/users/images/redheart.png"
+              src="static/users/images/redheart.png"
               alt="پسندیده شده"
               width="20"
             />
             {% else %}
-            <img src="/static/users/images/like.png" alt="پسندیدن" width="20" />
+            <img src="static/users/images/like.png" alt="پسندیدن" width="20" />
             {% endif %}
           </a>
         </div>
         <hr class="my-2" />
         <div class="d-flex justify-content-between align-items-center">
-          <div class="course-price">{{ course.price|floatformat:0 }} تومان</div>
+          <div class="course-price">{{ course.price|intcomma }} تومان</div>
           {% if course.id in purchased_course_ids %}
-            <button class="btn btn-success btn-sm" disabled>
+            <button class="btn btn-success" disabled>
               <i class="fas fa-check me-1"></i>
               خریداری شده
             </button>
+          {% elif course.id in pending_course_ids %}
+            <button class="btn btn-warning" disabled>
+              <i class="fas fa-clock me-1"></i>
+              در انتظار پرداخت
+            </button>
           {% else %}
-            <button id="{{ course.id }}" class="btn btn-primary btn-sm atc">
+            <button class="btn btn-primary atc" id="{{ course.id }}">
               <i class="fas fa-shopping-cart me-1"></i>
-              افزودن به سبد
+              افزودن به سبد خرید
             </button>
           {% endif %}
         </div>

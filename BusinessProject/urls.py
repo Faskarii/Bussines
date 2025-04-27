@@ -28,8 +28,8 @@ urlpatterns = [
     path('', include('lkncmmnt.urls', namespace='lkncmmnt')),
     path('accounts/', include('accounts.urls')),
     
-    # Add default auth URLs
-    path('login/', auth_views.LoginView.as_view(), name='login'),
+    # Update login URL to use custom view
+    path('login/', user_views.login_view, name='login'),
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
     path('register/', user_views.signup, name='register'),  # Alias for signup
 ]

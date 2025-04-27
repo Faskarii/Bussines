@@ -29,17 +29,16 @@
             </div>
             
             <div class="col-md-4">
-                <div class="card">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">خلاصه سبد خرید</h5>
+                    </div>
                     <div class="card-body">
-                        <h5 class="card-title">خلاصه سفارش</h5>
-                        <hr>
-                        <div class="d-flex justify-content-between mb-2">
+                        <div class="d-flex justify-content-between mb-3">
                             <span>جمع کل:</span>
-                            <span id="cart-total">{{ total|floatformat:0 }} تومان</span>
+                            <span>{{ total }} تومان</span>
                         </div>
-                        <a href="{% url 'courses:checkout' %}" class="btn btn-primary w-100 mt-3">
-                            پرداخت
-                        </a>
+                        <a href="{% url 'courses:checkout' %}" class="btn btn-primary w-100">پرداخت</a>
                     </div>
                 </div>
             </div>

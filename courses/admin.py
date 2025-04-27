@@ -1,5 +1,7 @@
 from django.contrib import admin
-from .models import Course, Lesson, Category, Order, OrderItem
+from .models import Course, Lesson, Category, Order, OrderItem, ContactMessage
+
+admin.site.register(ContactMessage)
 
 @admin.register(Course)
 class CourseAdmin(admin.ModelAdmin):

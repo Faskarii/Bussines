@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load humanize %}
 
 {% block body %}
 <div class="container mt-5">
@@ -114,7 +115,7 @@
                                 <tr>
                                     <td>#{{ order.id }}</td>
                                     <td>{{ order.created_at|date:"Y/m/d" }}</td>
-                                    <td>{{ order.total_amount }} تومان</td>
+                                    <td>{{ order.total_amount|intcomma }} تومان</td>
                                     <td>
                                         <span class="badge {% if order.status == 'completed' %}bg-success{% else %}bg-warning{% endif %}">
                                             {{ order.get_status_display }}
@@ -203,7 +204,7 @@
                         <tfoot>
                             <tr>
                                 <th>جمع کل</th>
-                                <th>{{ order.total_amount }} تومان</th>
+                                <th>{{ order.total_amount|intcomma }} تومان</th>
                             </tr>
                         </tfoot>
                     </table>

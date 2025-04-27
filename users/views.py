@@ -24,7 +24,7 @@ def signup(request):
                 messages.error(request, 'خطا در ثبت‌نام. لطفاً دوباره تلاش کنید.')
     else:
         form = SignUpForm()
-    return render(request, 'users/signup.html', {'form': form})
+    return render(request, 'accounts/signup.html', {'form': form})
 
 
 def login_view(request):
@@ -41,7 +41,7 @@ def login_view(request):
                 form.add_error(None, "Invalid username or password")
     else:
         form = LoginForm()
-    return render(request, 'users/login.html', {'form': form})
+    return render(request, 'accounts/login.html', {'form': form})
 
 
 # def logout_view(request):

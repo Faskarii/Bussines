@@ -1,5 +1,3 @@
-import json
-
 from django.db import models
 from django.utils.text import slugify
 from django.conf import settings
@@ -29,7 +27,7 @@ class Teacher(models.Model):
 class Course(models.Model):
     name = models.CharField(max_length=200)
     description = models.TextField()
-    price = models.DecimalField(max_digits=10, decimal_places=2)
+    price = models.IntegerField()
     image = models.ImageField(upload_to='courses/', null=True, blank=True)
     preview_video = models.FileField(upload_to='previews/', null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -80,7 +78,7 @@ class Order(models.Model):
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='orders')
     courses = models.ManyToManyField(Course, through='OrderItem')
-    total_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    total_amount = models.IntegerField()
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -92,7 +90,7 @@ class Order(models.Model):
 class OrderItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='items')
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
-    price = models.DecimalField(max_digits=10, decimal_places=2)
+    price = models.IntegerField()
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -128,3 +126,17 @@ class CartItem(models.Model):
     @property
     def total_price(self):
         return self.course.price * self.quantity
+
+
+class ContactMessage(models.Model):
+    name = models.CharField(max_length=100, verbose_name="نام و نام خانوادگی")
+    email = models.EmailField(verbose_name="ایمیل")
+    subject = models.CharField(max_length=200, verbose_name="موضوع")
+    message = models.TextField(verbose_name="پیام")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="تاریخ ارسال")
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.name} - {self.subject}"
