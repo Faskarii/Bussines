@@ -34,28 +34,33 @@
                     <!-- نمایش درس‌ها -->
                     <div class="mb-4">
                         <h5 class="mb-3">درس‌های دوره</h5>
-                        <div class="list-group">
-                            {% for lesson in lessons %}
-                            <div class="list-group-item">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <h6 class="mb-1">{{ lesson.title }}</h6>
-                                        <small class="text-muted">مدت زمان: {{ lesson.duration }} دقیقه</small>
+                        {% if request.user == course.teacher or has_purchased %}
+                            <div class="list-group">
+                                {% for lesson in lessons %}
+                                <div class="list-group-item">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h6 class="mb-1">{{ lesson.title }}</h6>
+                                            <small class="text-muted">مدت زمان: {{ lesson.duration }} دقیقه</small>
+                                        </div>
+                                        <a href="{{ lesson.video.url }}" class="btn btn-sm btn-primary" target="_blank">
+                                            <i class="fas fa-play me-1"></i>
+                                            مشاهده
+                                        </a>
                                     </div>
-                                    {% if request.user == course.teacher or has_purchased %}
-                                    <a href="{{ lesson.video.url }}" class="btn btn-sm btn-primary" target="_blank">
-                                        <i class="fas fa-play me-1"></i>
-                                        مشاهده
-                                    </a>
-                                    {% endif %}
                                 </div>
+                                {% empty %}
+                                <div class="alert alert-info">
+                                    هنوز درسی برای این دوره اضافه نشده است.
+                                </div>
+                                {% endfor %}
                             </div>
-                            {% empty %}
-                            <div class="alert alert-info">
-                                هنوز درسی برای این دوره اضافه نشده است.
+                        {% else %}
+                            <div class="alert alert-warning">
+                                <i class="fas fa-lock me-2"></i>
+                                برای مشاهده درس‌های این دوره، لطفاً آن را خریداری کنید.
                             </div>
-                            {% endfor %}
-                        </div>
+                        {% endif %}
                     </div>
                 </div>
             </div>
