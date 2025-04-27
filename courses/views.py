@@ -1,6 +1,6 @@
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
 from .forms import CourseForm, LessonForm, TeacherForm
 from .models import Course, Lesson, Teacher, Order, Cart, CartItem, OrderItem, ContactMessage
 from django.core.paginator import Paginator
@@ -8,17 +8,24 @@ from lkncmmnt.forms import CommentForm
 from django.contrib import messages
 
 
-def index(request):
-    courses = Course.objects.filter(is_published=True).prefetch_related('teacher')
+def home(request):
+    courses = Course.objects.filter(is_published=True, slug__isnull=False).exclude(slug='').prefetch_related('teacher')
     logged_user = request.user
 
     purchased_course_ids = []
     pending_course_ids = []
+    taught_course_ids = []
+    
     if logged_user.is_authenticated:
+        # Get courses taught by the user
+        taught_course_ids = Course.objects.filter(teacher=logged_user).values_list('id', flat=True)
+        
+        # Get purchased courses
         completed_orders = Order.objects.filter(user=logged_user, status='completed')
         for order in completed_orders:
             purchased_course_ids.extend(order.courses.values_list('id', flat=True))
             
+        # Get pending orders
         pending_orders = Order.objects.filter(user=logged_user, status='pending')
         for order in pending_orders:
             pending_course_ids.extend(order.courses.values_list('id', flat=True))
@@ -38,6 +45,7 @@ def index(request):
         'logged_user': logged_user,
         'purchased_course_ids': purchased_course_ids,
         'pending_course_ids': pending_course_ids,
+        'taught_course_ids': taught_course_ids,
         'search_query': course_name
     })
 
@@ -91,19 +99,25 @@ def course_detail(request, slug):
     lessons = course.lessons.all()
     has_purchased = False
     has_pending_order = False
+    is_teacher = False
     
     if request.user.is_authenticated:
-        has_purchased = OrderItem.objects.filter(
-            order__user=request.user,
-            order__status='completed',
-            course=course
-        ).exists()
+        # Check if user is the teacher of this course
+        is_teacher = request.user == course.teacher
         
-        has_pending_order = OrderItem.objects.filter(
-            order__user=request.user,
-            order__status='pending',
-            course=course
-        ).exists()
+        # Only check for purchases if user is not the teacher
+        if not is_teacher:
+            has_purchased = OrderItem.objects.filter(
+                order__user=request.user,
+                order__status='completed',
+                course=course
+            ).exists()
+            
+            has_pending_order = OrderItem.objects.filter(
+                order__user=request.user,
+                order__status='pending',
+                course=course
+            ).exists()
     
     if request.method == 'POST':
         comment_form = CommentForm(request.POST)
@@ -122,6 +136,7 @@ def course_detail(request, slug):
         'comment_form': comment_form,
         'has_purchased': has_purchased,
         'has_pending_order': has_pending_order,
+        'is_teacher': is_teacher,
     }
     return render(request, 'courses/course_detail.html', context)
 
@@ -215,5 +230,68 @@ def contact(request):
         messages.success(request, 'پیام شما با موفقیت ارسال شد. به زودی با شما تماس خواهیم گرفت.')
         return redirect('courses:contact')
     return render(request, 'contact.html')
+
+
+def staff_required(user):
+    return user.is_staff
+
+@login_required
+@user_passes_test(staff_required)
+def create_course(request):
+    if request.method == 'POST':
+        form = CourseForm(request.POST, request.FILES)
+        if form.is_valid():
+            try:
+                course = form.save(commit=False)
+                course.teacher = request.user
+                course.save()
+                messages.success(request, 'دوره با موفقیت ایجاد شد.')
+                return redirect('courses:course_detail', slug=course.slug)
+            except Exception as e:
+                messages.error(request, f'خطا در ایجاد دوره: {str(e)}')
+        else:
+            # Display specific field errors
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f'{field}: {error}')
+    else:
+        form = CourseForm()
+    
+    return render(request, 'courses/create_course.html', {
+        'form': form,
+        'title': 'افزودن دوره جدید'
+    })
+
+@login_required
+@user_passes_test(staff_required)
+def create_lesson(request, course_id):
+    course = get_object_or_404(Course, id=course_id)
+    
+    # Check if the user is the teacher of this course
+    if request.user != course.teacher:
+        messages.error(request, 'شما مجاز به افزودن درس به این دوره نیستید.')
+        return redirect('courses:course_detail', slug=course.slug)
+    
+    if request.method == 'POST':
+        form = LessonForm(request.POST, request.FILES)
+        if form.is_valid():
+            lesson = form.save(commit=False)
+            lesson.course = course
+            lesson.save()
+            messages.success(request, 'درس با موفقیت ایجاد شد.')
+            return redirect('courses:course_detail', slug=course.slug)
+        else:
+            # Show detailed error messages
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f'{field}: {error}')
+    else:
+        form = LessonForm()
+    
+    return render(request, 'courses/create_lesson.html', {
+        'form': form,
+        'course': course,
+        'title': f'افزودن درس جدید به دوره {course.name}'
+    })
 
 

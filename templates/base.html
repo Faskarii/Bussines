@@ -25,6 +25,8 @@
             background-color: var(--primary-color) !important;
             padding: 1rem 0;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            position: sticky;
+            z-index: 1051 !important;
         }
         .navbar-brand {
             font-size: 1.5rem;
@@ -54,13 +56,16 @@
             padding: 0 1.5rem;
         }
         .profile-avatar { width: 40px; height: 40px; object-fit: cover; }
+        .dropdown-menu {
+            z-index: 2000 !important;
+        }
     </style>
     <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
     <title>{% block title %}{% endblock %}</title>
 </head>
 <body>
     <div class="container-fluid px-0">
-        <nav class="navbar navbar-expand-lg navbar-dark">
+        <nav class="navbar navbar-expand-lg navbar-dark position-sticky" >
             <div class="container">
                 <a class="navbar-brand" href="#">دوره‌ها</a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
@@ -71,6 +76,22 @@
                         <li class="nav-item active">
                             <a class="nav-link" href="{% url 'courses:home' %}">خانه</a>
                         </li>
+                        {% if user.is_staff %}
+{#                        <li class="nav-item dropdown">#}
+{#                            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">#}
+{#                                <i class="fas fa-plus-circle me-1"></i>افزودن#}
+{#                            </a>#}
+
+{#                            <ul class="dropdown-menu" aria-labelledby="navbarDropdown">#}
+{#                                <li><a class="dropdown-item" href="{% url 'courses:create_course' %}">#}
+{#                                    <i class="fas fa-plus me-2"></i>افزودن دوره جدید#}
+{#                                </a></li>#}
+{#                            </ul>#}
+                            <li class="nav-item">
+                            <a class="nav-link" href="{% url 'courses:create_course' %}">افزودن دوره جدید</a>
+                        </li>
+
+                        {% endif %}
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'courses:about' %}">درباره ما</a>
                         </li>
@@ -88,9 +109,9 @@
                         {% if user.is_authenticated %}
                             <div class="dropdown">
                                 <a href="#" class="d-flex align-items-center text-decoration-none dropdown-toggle" id="userDropdown" data-bs-toggle="dropdown">
-                                    <img src="{% if user.avatar %}{{ user.avatar.url }}{% else %}{% static 'users/images/default_avatar.png' %}{% endif %}" 
+                                    <!-- <img src="{% if user.avatar %}{{ user.avatar.url }}{% else %}{% static 'users/images/default_avatar.png' %}{% endif %}" 
                                          class="rounded-circle profile-avatar me-2" 
-                                         alt="{{ user.get_full_name|default:user.username }}'s avatar">
+                                         alt="{{ user.get_full_name|default:user.username }}'s avatar"> -->
                                     <span class="me-1">{{ user.get_full_name|default:user.username }}</span>
                                 </a>
                                 <ul class="dropdown-menu dropdown-menu-end">

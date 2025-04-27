@@ -1,4 +1,6 @@
 {% extends 'base.html' %}
+{% load static %}
+{% load humanize %}
 
 {% block body %}
 <div class="container mt-5">
@@ -9,45 +11,55 @@
         <!-- بخش اصلی محتوا -->
         <div class="col-lg-8">
             <div class="card border-0 shadow-sm mb-4">
-                <img src="/media/{{ course.image }}" class="card-img-top" alt="{{ course.name }}" style="height: 400px; object-fit: cover;">
                 <div class="card-body">
                     <h1 class="h2 mb-3">{{ course.name }}</h1>
-                    <p class="text-justify">{{ course.description }}</p>
+                    {% if course.image %}
+                    <img src="{{ course.image.url }}" class="img-fluid rounded mb-4" alt="{{ course.name }}">
+                    {% endif %}
+                    <div class="mb-4">
+                        <h5 class="mb-3">توضیحات دوره</h5>
+                        <p class="text-muted">{{ course.description }}</p>
+                    </div>
+
+                    {% if course.preview_video %}
+                    <div class="mb-4">
+                        <h5 class="mb-3">پیش‌نمایش دوره</h5>
+                        <video class="w-100 rounded" controls>
+                            <source src="{{ course.preview_video.url }}" type="video/mp4">
+                            مرورگر شما از پخش ویدیو پشتیبانی نمی‌کند.
+                        </video>
+                    </div>
+                    {% endif %}
+
+                    <!-- نمایش درس‌ها -->
+                    <div class="mb-4">
+                        <h5 class="mb-3">درس‌های دوره</h5>
+                        <div class="list-group">
+                            {% for lesson in lessons %}
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-1">{{ lesson.title }}</h6>
+                                        <small class="text-muted">مدت زمان: {{ lesson.duration }} دقیقه</small>
+                                    </div>
+                                    {% if request.user == course.teacher or has_purchased %}
+                                    <a href="{{ lesson.video.url }}" class="btn btn-sm btn-primary" target="_blank">
+                                        <i class="fas fa-play me-1"></i>
+                                        مشاهده
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% empty %}
+                            <div class="alert alert-info">
+                                هنوز درسی برای این دوره اضافه نشده است.
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
                 </div>
             </div>
             
-            <!-- بخش جلسات -->
-            <div class="card border-0 shadow-sm mb-4">
-                <div class="card-body">
-                    <h2 class="h4 mb-4">جلسات دوره</h2>
-                    {% if has_purchased %}
-                        {% for lesson in lessons %}
-                        <div class="d-flex align-items-center justify-content-between mb-3 p-3 bg-light rounded">
-                            <div class="d-flex align-items-center">
-                                <i class="fas fa-play-circle text-primary me-3"></i>
-                                <div>
-                                    <h6 class="mb-1">{{ lesson.title }}</h6>
-                                    <small class="text-muted">{{ lesson.duration }} دقیقه</small>
-                                </div>
-                            </div>
-                            <button class="btn btn-outline-primary btn-sm play-video" 
-                                    data-bs-toggle="modal" 
-                                    data-bs-target="#videoModal"
-                                    data-video-url="/media/{{ lesson.video }}">
-                                <i class="fas fa-play me-1"></i>
-                                پخش
-                            </button>
-                        </div>
-                        {% endfor %}
-                    {% else %}
-                        <div class="alert alert-info">
-                            <i class="fas fa-lock me-2"></i>
-                            برای مشاهده محتوای دوره، لطفاً ابتدا دوره را خریداری کنید.
-                        </div>
-                    {% endif %}
-                </div>
-            </div>
-
             <!-- بخش نظرات -->
             <div class="card border-0 shadow-sm">
                 <div class="card-body">
@@ -81,32 +93,66 @@
         <div class="col-lg-4">
             <div class="card border-0 shadow-sm sticky-top">
                 <div class="card-body">
-                    <div class="text-center mb-4">
-                        <h3 class="text-primary mb-0">{{ course.price|floatformat:0 }} تومان</h3>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="mb-0">قیمت دوره</h5>
+                        <span class="h4 mb-0">{{ course.price|intcomma }} تومان</span>
                     </div>
-                    {% if has_purchased %}
-                        <button class="btn btn-success" disabled>
-                            <i class="fas fa-check me-1"></i>
-                            خریداری شده
-                        </button>
+
+                    {% if request.user == course.teacher %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            شما مدرس این دوره هستید و می‌توانید به تمام محتوا دسترسی داشته باشید.
+                        </div>
+                        <a href="{% url 'courses:create_lesson' course_id=course.id %}" class="btn btn-primary w-100 mb-2">
+                            <i class="fas fa-plus me-2"></i>
+                            افزودن درس جدید
+                        </a>
+                    {% elif has_purchased %}
+                        <div class="alert alert-success">
+                            <i class="fas fa-check-circle me-2"></i>
+                            شما این دوره را خریداری کرده‌اید.
+                        </div>
                     {% elif has_pending_order %}
-                        <button class="btn btn-warning" disabled>در انتظار پرداخت</button>
+                        <div class="alert alert-warning">
+                            <i class="fas fa-clock me-2"></i>
+                            درخواست خرید شما در حال بررسی است.
+                        </div>
                     {% else %}
-                        <button class="btn btn-primary atc" id="{{ course.id }}">
-                            <i class="fas fa-shopping-cart me-1"></i>
+                        <button class="btn btn-primary w-100 mb-2" onclick="addToCart({{ course.id }})">
+                            <i class="fas fa-shopping-cart me-2"></i>
                             افزودن به سبد خرید
                         </button>
                     {% endif %}
-                    <div class="d-flex align-items-center mb-3">
-                        <i class="fas fa-user-tie text-primary me-2"></i>
-                        <span>
-                            {% if course.teacher %}
-                                مدرس: {{ course.teacher.get_full_name|default:course.teacher.username }}
-                            {% else %}
-                                مدرسی تعیین نشده است
-                            {% endif %}
-                        </span>
-                    </div>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <h5 class="mb-3">اطلاعات دوره</h5>
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <i class="fas fa-users me-2 text-primary"></i>
+                            تعداد دانشجویان: {{ course.enrolled_students }}
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-clock me-2 text-primary"></i>
+                            مدت زمان کل دوره: {{ course.total_duration }} دقیقه
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-calendar me-2 text-primary"></i>
+                            تاریخ ایجاد: {{ course.created_at|date:"Y/m/d" }}
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-sync me-2 text-primary"></i>
+                            آخرین بروزرسانی: {{ course.updated_at|date:"Y/m/d" }}
+                        </li>
+                        {% if course.category %}
+                        <li class="mb-2">
+                            <i class="fas fa-tag me-2 text-primary"></i>
+                            دسته‌بندی: {{ course.category.name }}
+                        </li>
+                        {% endif %}
+                    </ul>
                 </div>
             </div>
         </div>
@@ -134,9 +180,14 @@
 </div>
 
 <style>
+.img-fluid {
+    max-height: 400px;
+    object-fit: cover;
+    width: 100%;
+}
 .sticky-top { 
     top: 20px; 
-    z-index: 1020; /* کمتر از z-index منوی کاربری */
+    z-index: 1020;
 }
 .text-justify { 
     text-align: justify; 
@@ -157,7 +208,7 @@
     padding: 0;
 }
 .dropdown-menu {
-    z-index: 1030; /* بیشتر از z-index استیکی */
+    z-index: 1030;
 }
 </style>
 {% endblock %}

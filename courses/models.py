@@ -1,7 +1,27 @@
 from django.db import models
 from django.utils.text import slugify
 from django.conf import settings
+from django.db.models import Sum
+import re
 
+def persian_slugify(text):
+    # تبدیل اعداد فارسی به انگلیسی
+    persian_numbers = '۰۱۲۳۴۵۶۷۸۹'
+    english_numbers = '0123456789'
+    translation = str.maketrans(persian_numbers, english_numbers)
+    text = text.translate(translation)
+    
+    # حذف کاراکترهای خاص و تبدیل فاصله به خط تیره
+    text = re.sub(r'[^\w\s-]', '', text)
+    text = re.sub(r'[\s]+', '-', text)
+    
+    # حذف خط تیره‌های تکراری
+    text = re.sub(r'[-]+', '-', text)
+    
+    # حذف خط تیره از ابتدا و انتها
+    text = text.strip('-')
+    
+    return text
 
 class Category(models.Model):
     name = models.CharField(max_length=100)
@@ -14,6 +34,11 @@ class Category(models.Model):
 
     def __str__(self):
         return self.name
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = persian_slugify(self.name)
+        super().save(*args, **kwargs)
 
 
 class Teacher(models.Model):
@@ -32,7 +57,7 @@ class Course(models.Model):
     preview_video = models.FileField(upload_to='previews/', null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    is_published = models.BooleanField(default=False)
+    is_published = models.BooleanField(default=True)
     teacher = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='courses_taught', null=True)
     liked_by = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='liked_courses', blank=True)
     category = models.ForeignKey('Category', on_delete=models.SET_NULL, null=True, related_name='courses')
@@ -41,21 +66,33 @@ class Course(models.Model):
     def __str__(self):
         return self.name
 
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            base_slug = persian_slugify(self.name)
+            slug = base_slug
+            counter = 1
+            
+            while Course.objects.filter(slug=slug).exclude(pk=self.pk if self.pk else None).exists():
+                slug = f"{base_slug}-{counter}"
+                counter += 1
+                
+            self.slug = slug
+        super().save(*args, **kwargs)
+
+    @property
+    def total_duration(self):
+        return self.lessons.aggregate(total=Sum('duration'))['total'] or 0
+
     @property
     def enrolled_students(self):
         return self.orderitem_set.filter(order__status='completed').values_list('order__user', flat=True).distinct().count()
-
-    def save(self, *args, **kwargs):
-        if not self.slug:
-            self.slug = slugify(self.name)
-        super().save(*args, **kwargs)
 
 
 class Lesson(models.Model):
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='lessons')
     title = models.CharField(max_length=200)
     content = models.TextField(blank=True, null=True)
-    video = models.FileField(upload_to='lessons/')
+    video = models.FileField(upload_to='lessons/', null=True, blank=True)
     order = models.IntegerField(default=0)
     duration = models.IntegerField(help_text='Duration in minutes')
     completed_by = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='completed_lessons', blank=True)
@@ -67,6 +104,11 @@ class Lesson(models.Model):
 
     def __str__(self):
         return f"{self.course.name} - {self.title}"
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        # Update course's updated_at timestamp
+        self.course.save(update_fields=['updated_at'])
 
 
 class Order(models.Model):
