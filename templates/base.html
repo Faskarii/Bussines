@@ -10,64 +10,91 @@
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
     <style>
-        :root {
-            --primary-color: #0066cc;
-            --secondary-color: #004d99;
-            --light-color: #ffffff;
-            --dark-color: #000000;
-        }
         body {
             font-family: 'Vazirmatn', system-ui, -apple-system, sans-serif;
-            direction: rtl;
-            text-align: right;
-            padding-top: 76px;
-            padding-bottom: 20px;
+            background: #f8fafc;
+            color: #222;
+            margin: 0;
+            padding: 0;
         }
         .navbar {
-            background-color: var(--primary-color) !important;
-            padding: 1rem 0;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            position: fixed !important;
-            top: 0;
-            left: 0;
-            right: 0;
-            width: 100%;
-            z-index: 1051 !important;
+            background: #2563eb !important;
+            border-radius: 1.5rem;
+            margin: 1.5rem auto 1rem auto;
+            max-width: 1200px;
+            box-shadow: 0 4px 24px 0 rgba(37,99,235,0.08);
+            padding: 0.7rem 2rem;
         }
-        .navbar-brand {
-            font-size: 1.5rem;
-            font-weight: bold;
-            margin-right: 2rem;
-        }
-        .nav-link {
+        .navbar-brand, .nav-link, .course-price {
+            color: #fff !important;
+            font-weight: 500;
             font-size: 1.1rem;
-            margin-left: 1.5rem;
-            transition: color 0.3s ease;
+            transition: color 0.2s;
         }
-        .nav-link:hover {
-            color: rgba(255,255,255,0.8) !important;
+        .nav-link:hover, .navbar-brand:hover {
+            color: #a5b4fc !important;
         }
-        .btn-secondary {
-            background-color: var(--secondary-color);
-            border-color: var(--secondary-color);
+        .dropdown-menu {
+            border-radius: 1rem;
+            box-shadow: 0 4px 24px 0 rgba(37,99,235,0.08);
+            border: none;
+        }
+        .btn-primary, .btn-secondary {
+            border-radius: 1.5rem;
+            font-weight: 500;
             padding: 0.5rem 1.5rem;
-            font-size: 1.1rem;
+            font-size: 1rem;
+            box-shadow: 0 2px 8px 0 rgba(37,99,235,0.08);
         }
-        .btn-secondary:hover {
-            background-color: var(--primary-color);
-            border-color: var(--primary-color);
+        .btn-primary {
+            background: #2563eb;
+            border: none;
+        }
+        .btn-primary:hover {
+            background: #1d4ed8;
+        }
+        .btn-outline-primary {
+            border-radius: 1.5rem;
+            color: #2563eb;
+            border: 1.5px solid #2563eb;
+        }
+        .btn-outline-primary:hover {
+            background: #2563eb;
+            color: #fff;
+        }
+        .profile-avatar {
+            width: 40px;
+            height: 40px;
+            object-fit: cover;
+            border-radius: 50%;
+            border: 2px solid #fff;
+            box-shadow: 0 2px 8px 0 rgba(37,99,235,0.08);
         }
         .container {
             max-width: 1200px;
-            padding: 0 1.5rem;
+            margin: 0 auto;
         }
-        .profile-avatar { width: 40px; height: 40px; object-fit: cover; }
         .dropdown-menu {
             z-index: 2000 !important;
         }
+        .alert-message {
+            z-index: 9999;
+            min-width: 300px;
+            text-align: right;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            border-radius: 1rem;
+        }
+        @media (max-width: 991px) {
+            .navbar {
+                border-radius: 0;
+                margin: 0;
+                max-width: 100%;
+                padding: 0.7rem 1rem;
+            }
+        }
     </style>
-    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
     <title>{% block title %}{% endblock %}</title>
 </head>
 <body>
