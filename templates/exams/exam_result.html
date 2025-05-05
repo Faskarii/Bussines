@@ -1,0 +1,199 @@
+{% extends 'base.html' %}
+
+{% block body %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4 text-center">
+                    <h2 class="card-title mb-4">نتیجه آزمون {{ result.exam.title }}</h2>
+                    
+                    {% if result.passed %}
+                    <div class="mb-4">
+                        <i class="fas fa-check-circle text-success fa-5x mb-3"></i>
+                        <h3 class="text-success">تبریک! شما در این آزمون قبول شدید</h3>
+                        <p class="text-muted">نمره شما: {{ result.score }}%</p>
+                    </div>
+                    
+                    {% if result.certificate_issued %}
+                    <div class="certificate-container p-4 mb-4">
+                        <div class="certificate border p-4">
+                            <div class="certificate-header">
+                                <div class="certificate-logo">
+                                    <i class="fas fa-award text-primary"></i>
+                                </div>
+                                <h3 class="certificate-title mb-0">گواهی پایان دوره</h3>
+                            </div>
+                            
+                            <div class="certificate-body">
+                                <p class="certificate-text mb-2">گواهی می‌شود که:</p>
+                                <div class="student-name-container">
+                                    <h4 class="student-name">{{ result.user.first_name }} {{ result.user.last_name }}</h4>
+                                </div>
+                                <p class="course-completion">
+                                    دوره <strong>{{ result.exam.course.name }}</strong> را با موفقیت به پایان رسانده
+                                    <br>و با کسب نمره <strong>{{ result.score }}%</strong> در آزمون پایانی قبول شده است.
+                                </p>
+                                <div class="certificate-footer">
+                                    <div class="date">
+                                        <p class="mb-0">تاریخ صدور: {{ result.completed_at|date:"Y/m/d" }}</p>
+                                    </div>
+                                    <div class="certificate-seal">
+                                        <i class="fas fa-certificate text-primary"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="btn btn-success btn-lg mb-3" onclick="window.print()">
+                        <i class="fas fa-print me-2"></i>
+                        چاپ گواهی
+                    </button>
+                    {% endif %}
+                    
+                    {% else %}
+                    <div class="mb-4">
+                        <i class="fas fa-times-circle text-danger fa-5x mb-3"></i>
+                        <h3 class="text-danger">متأسفانه در این آزمون قبول نشدید</h3>
+                        <p class="text-muted">نمره شما: {{ result.score }}%</p>
+                        <p class="text-muted">حداقل نمره قبولی: {{ result.exam.passing_score }}%</p>
+                    </div>
+                    {% endif %}
+                    
+                    <a href="{% url 'courses:course_detail' result.exam.course.slug %}" class="btn btn-outline-primary">
+                        <i class="fas fa-arrow-right me-2"></i>
+                        بازگشت به صفحه دوره
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.certificate-container {
+    background: #f8f9fa;
+    border-radius: 1rem;
+    padding: 2rem;
+}
+
+.certificate {
+    background: white;
+    border-radius: 1rem;
+    border: 2px solid #2563eb !important;
+    position: relative;
+    padding: 2rem !important;
+}
+
+.certificate:before {
+    content: '';
+    position: absolute;
+    top: 0.5rem;
+    left: 0.5rem;
+    right: 0.5rem;
+    bottom: 0.5rem;
+    border: 1px solid #2563eb;
+    border-radius: 0.5rem;
+    pointer-events: none;
+}
+
+.certificate-header {
+    text-align: center;
+    margin-bottom: 2rem;
+    position: relative;
+}
+
+.certificate-logo {
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.certificate-logo i {
+    font-size: 2.5rem;
+}
+
+.certificate-title {
+    color: #2563eb;
+    font-weight: bold;
+    font-size: 1.8rem;
+}
+
+.certificate-body {
+    text-align: center;
+    padding: 1rem 0;
+}
+
+.certificate-text {
+    color: #4b5563;
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+}
+
+.student-name-container {
+    margin: 1rem 0 2rem;
+    display: inline-block;
+    min-width: 300px;
+}
+
+.student-name {
+    color: #1e40af;
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin: 0;
+    padding: 0.5rem 2rem;
+    border-bottom: 2px dashed #2563eb;
+    display: inline-block;
+}
+
+.course-completion {
+    font-size: 1.1rem;
+    line-height: 2;
+    color: #4b5563;
+    margin: 1.5rem 0;
+}
+
+.certificate-footer {
+    margin-top: 2rem;
+    padding-top: 1rem;
+    border-top: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.date {
+    font-size: 1rem;
+    color: #4b5563;
+}
+
+.certificate-seal {
+    transform: rotate(-15deg);
+}
+
+.certificate-seal i {
+    font-size: 2rem;
+}
+
+@media print {
+    body * {
+        visibility: hidden;
+    }
+    .certificate-container, .certificate-container * {
+        visibility: visible;
+    }
+    .certificate-container {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        padding: 0;
+    }
+    .certificate {
+        border: 2px solid #2563eb !important;
+        box-shadow: none !important;
+    }
+}
+</style>
+{% endblock %} 

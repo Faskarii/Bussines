@@ -6,6 +6,7 @@ from .models import Course, Lesson, Teacher, Order, Cart, CartItem, OrderItem, C
 from django.core.paginator import Paginator
 from lkncmmnt.forms import CommentForm
 from django.contrib import messages
+from exams.models import ExamResult
 
 
 def home(request):
@@ -114,6 +115,8 @@ def course_detail(request, slug):
     has_pending_order = False
     is_teacher = False
     course_progress = 0
+    exam_results = []
+    has_passed_exam = False
     
     if request.user.is_authenticated:
         # Check if user is the teacher of this course
@@ -136,6 +139,11 @@ def course_detail(request, slug):
         # Get course progress
         if has_purchased or is_teacher:
             course_progress = course.get_progress_for_user(request.user)
+            
+            # Get exam results if course has an exam
+            if hasattr(course, 'exam'):
+                exam_results = course.exam.results.filter(user=request.user).order_by('-completed_at')
+                has_passed_exam = exam_results.filter(passed=True).exists()
     
     if request.method == 'POST':
         comment_form = CommentForm(request.POST)
@@ -167,6 +175,8 @@ def course_detail(request, slug):
         'has_pending_order': has_pending_order,
         'is_teacher': is_teacher,
         'course_progress': course_progress,
+        'exam_results': exam_results,
+        'has_passed_exam': has_passed_exam,
     }
     return render(request, 'courses/course_detail.html', context)
 

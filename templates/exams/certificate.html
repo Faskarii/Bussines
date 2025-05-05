@@ -1,0 +1,177 @@
+{% extends 'base.html' %}
+
+{% block body %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="certificate-page">
+                <div class="certificate border p-5">
+                    <div class="certificate-header">
+                        <div class="certificate-logo">
+                            <i class="fas fa-award text-primary"></i>
+                        </div>
+                        <h1 class="certificate-title mb-0">گواهی پایان دوره</h1>
+                    </div>
+                    
+                    <div class="certificate-body">
+                        <p class="certificate-text mb-2">گواهی می‌شود که:</p>
+                        <div class="student-name-container">
+                            <h2 class="student-name">{{ result.user.first_name }} {{ result.user.last_name }}</h2>
+                        </div>
+                        <p class="course-completion">
+                            دوره <strong>{{ course.name }}</strong> را با موفقیت به پایان رسانده
+                            <br>و با کسب نمره <strong>{{ result.score }}%</strong> در آزمون پایانی قبول شده است.
+                        </p>
+                        <div class="certificate-footer">
+                            <div class="date">
+                                <p class="mb-0">تاریخ صدور: {{ result.completed_at|date:"Y/m/d" }}</p>
+                            </div>
+                            <div class="certificate-seal">
+                                <i class="fas fa-certificate text-primary"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="text-center mt-4 print-hide">
+                    <button class="btn btn-success btn-lg" onclick="window.print()">
+                        <i class="fas fa-print me-2"></i>
+                        چاپ گواهی
+                    </button>
+                    <a href="{% url 'courses:course_detail' course.slug %}" class="btn btn-outline-primary btn-lg ms-2">
+                        <i class="fas fa-arrow-right me-2"></i>
+                        بازگشت به صفحه دوره
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.certificate-page {
+    background: white;
+    padding: 2rem;
+}
+
+.certificate {
+    background: white;
+    border: 3px solid #2563eb !important;
+    position: relative;
+    padding: 3rem !important;
+    margin: 2rem auto;
+    max-width: 800px;
+}
+
+.certificate:before {
+    content: '';
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+    right: 1rem;
+    bottom: 1rem;
+    border: 1px solid #2563eb;
+    border-radius: 0.5rem;
+    pointer-events: none;
+}
+
+.certificate-header {
+    text-align: center;
+    margin-bottom: 3rem;
+    position: relative;
+}
+
+.certificate-logo {
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.certificate-logo i {
+    font-size: 3rem;
+}
+
+.certificate-title {
+    color: #2563eb;
+    font-weight: bold;
+    font-size: 2.5rem;
+}
+
+.certificate-body {
+    text-align: center;
+    padding: 2rem 0;
+}
+
+.certificate-text {
+    color: #4b5563;
+    font-size: 1.3rem;
+    margin-bottom: 2rem;
+}
+
+.student-name-container {
+    margin: 2rem 0;
+    display: inline-block;
+    min-width: 400px;
+}
+
+.student-name {
+    color: #1e40af;
+    font-size: 2rem;
+    font-weight: bold;
+    margin: 0;
+    padding: 0.5rem 2rem;
+    border-bottom: 2px dashed #2563eb;
+    display: inline-block;
+}
+
+.course-completion {
+    font-size: 1.3rem;
+    line-height: 2;
+    color: #4b5563;
+    margin: 2rem 0;
+}
+
+.certificate-footer {
+    margin-top: 3rem;
+    padding-top: 2rem;
+    border-top: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.date {
+    font-size: 1.2rem;
+    color: #4b5563;
+}
+
+.certificate-seal {
+    transform: rotate(-15deg);
+}
+
+.certificate-seal i {
+    font-size: 3rem;
+}
+
+@media print {
+    body {
+        background: white;
+    }
+    .print-hide {
+        display: none;
+    }
+    .certificate-page {
+        padding: 0;
+    }
+    .certificate {
+        margin: 0;
+        border: none !important;
+        box-shadow: none !important;
+    }
+    .certificate:before {
+        border: 2px solid #2563eb;
+    }
+}
+</style>
+{% endblock %} 

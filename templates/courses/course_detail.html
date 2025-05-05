@@ -158,69 +158,163 @@
 
         <!-- سایدبار -->
         <div class="col-lg-4">
-            <div class="card border-0 shadow-sm position-sticky mb-3" style="top: 20px;">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h5 class="mb-0">قیمت دوره</h5>
-                        <span class="h4 mb-0">{{ course.price|intcomma }} تومان</span>
-                    </div>
+            <div class="position-sticky" style="top: 20px;">
+                <div class="card border-0 shadow-sm mb-3">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="mb-0">قیمت دوره</h5>
+                            <span class="h4 mb-0">{{ course.price|intcomma }} تومان</span>
+                        </div>
 
-                    {% if request.user == course.teacher %}
-                        <div class="alert alert-info">
-                            <i class="fas fa-info-circle me-2"></i>
-                            شما مدرس این دوره هستید و می‌توانید به تمام محتوا دسترسی داشته باشید.
-                        </div>
-                        <a href="{% url 'courses:create_lesson' course_id=course.id %}" class="btn btn-primary w-100 mb-2">
-                            <i class="fas fa-plus me-2"></i>
-                            افزودن درس جدید
-                        </a>
-                    {% elif has_purchased %}
-                        <div class="alert alert-success">
-                            <i class="fas fa-check-circle me-2"></i>
-                            شما این دوره را خریداری کرده‌اید.
-                        </div>
-                    {% elif has_pending_order %}
-                        <div class="alert alert-warning">
-                            <i class="fas fa-clock me-2"></i>
-                            درخواست خرید شما در حال بررسی است.
-                        </div>
-                    {% else %}
-                        <button class="btn btn-primary w-100 mb-2" onclick="addToCart({{ course.id }})">
-                            <i class="fas fa-shopping-cart me-2"></i>
-                            افزودن به سبد خرید
-                        </button>
-                    {% endif %}
-                </div>
-            </div>
-
-            <div class="card border-0 shadow-sm position-sticky" style="top: 250px;">
-                <div class="card-body">
-                    <h5 class="mb-3">اطلاعات دوره</h5>
-                    <ul class="list-unstyled">
-                        <li class="mb-2">
-                            <i class="fas fa-users me-2 text-primary"></i>
-                            تعداد دانشجویان: {{ course.enrolled_students }}
-                        </li>
-                        <li class="mb-2">
-                            <i class="fas fa-clock me-2 text-primary"></i>
-                            مدت زمان کل دوره: {{ course.total_duration }} دقیقه
-                        </li>
-                        <li class="mb-2">
-                            <i class="fas fa-calendar me-2 text-primary"></i>
-                            تاریخ ایجاد: {{ course.created_at|date:"Y/m/d" }}
-                        </li>
-                        <li class="mb-2">
-                            <i class="fas fa-sync me-2 text-primary"></i>
-                            آخرین بروزرسانی: {{ course.updated_at|date:"Y/m/d" }}
-                        </li>
-                        {% if course.category %}
-                        <li class="mb-2">
-                            <i class="fas fa-tag me-2 text-primary"></i>
-                            دسته‌بندی: {{ course.category.name }}
-                        </li>
+                        {% if request.user == course.teacher %}
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i>
+                                شما مدرس این دوره هستید و می‌توانید به تمام محتوا دسترسی داشته باشید.
+                            </div>
+                            <a href="{% url 'courses:create_lesson' course_id=course.id %}" class="btn btn-primary w-100 mb-2">
+                                <i class="fas fa-plus me-2"></i>
+                                افزودن درس جدید
+                            </a>
+                        {% elif has_purchased %}
+                            <div class="alert alert-success">
+                                <i class="fas fa-check-circle me-2"></i>
+                                شما این دوره را خریداری کرده‌اید.
+                            </div>
+                        {% elif has_pending_order %}
+                            <div class="alert alert-warning">
+                                <i class="fas fa-clock me-2"></i>
+                                درخواست خرید شما در حال بررسی است.
+                            </div>
+                        {% else %}
+                            <button class="btn btn-primary w-100 mb-2" onclick="addToCart({{ course.id }})">
+                                <i class="fas fa-shopping-cart me-2"></i>
+                                افزودن به سبد خرید
+                            </button>
                         {% endif %}
-                    </ul>
+                    </div>
                 </div>
+
+                <div class="card border-0 shadow-sm mb-3">
+                    <div class="card-body">
+                        <h5 class="mb-3">اطلاعات دوره</h5>
+                        <ul class="list-unstyled">
+                            <li class="mb-2">
+                                <i class="fas fa-users me-2 text-primary"></i>
+                                تعداد دانشجویان: {{ course.enrolled_students }}
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-clock me-2 text-primary"></i>
+                                مدت زمان کل دوره: {{ course.total_duration }} دقیقه
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-calendar me-2 text-primary"></i>
+                                تاریخ ایجاد: {{ course.created_at|date:"Y/m/d" }}
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-sync me-2 text-primary"></i>
+                                آخرین بروزرسانی: {{ course.updated_at|date:"Y/m/d" }}
+                            </li>
+                            {% if course.category %}
+                            <li class="mb-2">
+                                <i class="fas fa-tag me-2 text-primary"></i>
+                                دسته‌بندی: {{ course.category.name }}
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                </div>
+
+                {% if has_purchased %}
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <h5 class="mb-3">
+                            <i class="fas fa-graduation-cap me-2 text-primary"></i>
+                            آزمون پایانی دوره
+                        </h5>
+
+                        <!-- نمایش درصد پیشرفت -->
+                        <div class="progress mb-3" style="height: 10px; border-radius: 1rem; background-color: #e2e8f0;">
+                            <div class="progress-bar bg-success" role="progressbar" 
+                                 style="width: {{ course_progress }}%; border-radius: 1rem;" 
+                                 aria-valuenow="{{ course_progress }}" 
+                                 aria-valuemin="0" 
+                                 aria-valuemax="100">
+                            </div>
+                        </div>
+                        <p class="text-center mb-3">
+                            <span class="text-success fw-bold">{{ course_progress }}%</span>
+                            <span class="text-muted">از دوره تکمیل شده</span>
+                        </p>
+
+                        {% if course_progress >= 75 %}
+                            <div class="alert alert-info py-2 mb-3">
+                                <i class="fas fa-info-circle me-1"></i>
+                                {% if not has_passed_exam %}
+                                    شما می‌توانید در آزمون شرکت کنید
+                                {% else %}
+                                    شما در آزمون قبول شده‌اید
+                                {% endif %}
+                            </div>
+
+                            {% if exam_results %}
+                            <div class="mb-3">
+                                <h6 class="mb-2">نتایج آزمون‌های قبلی:</h6>
+                                <div class="list-group">
+                                    {% for result in exam_results %}
+                                    <div class="list-group-item py-2">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <small class="text-muted">تاریخ: {{ result.created_at|date:"Y/m/d" }}</small>
+                                                <div>
+                                                    نمره: <span class="fw-bold">{{ result.score }}</span>
+                                                    {% if result.passed %}
+                                                        <span class="badge bg-success">قبول</span>
+                                                    {% else %}
+                                                        <span class="badge bg-danger">مردود</span>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                            {% if result.passed %}
+                                            <a href="{% url 'exams:download_certificate' course.id %}" class="btn btn-sm btn-success">
+                                                <i class="fas fa-award me-1"></i>
+                                                دریافت گواهی
+                                            </a>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            {% if not has_passed_exam %}
+                            <a href="{% url 'exams:exam_detail' course.id %}" class="btn btn-primary w-100">
+                                <i class="fas fa-graduation-cap me-2"></i>
+                                {% if exam_results %}
+                                    شرکت مجدد در آزمون
+                                {% else %}
+                                    شرکت در آزمون
+                                {% endif %}
+                            </a>
+                            {% else %}
+                            <div class="alert alert-success py-2 mb-3">
+                                <i class="fas fa-check-circle me-1"></i>
+                                تبریک! شما این دوره را با موفقیت به پایان رسانده‌اید
+                            </div>
+                            {% endif %}
+                        {% else %}
+                            <div class="alert alert-warning py-2 mb-3">
+                                <i class="fas fa-lock me-1"></i>
+                                نیاز به تکمیل 75% دوره
+                            </div>
+                            <button class="btn btn-secondary w-100" disabled>
+                                <i class="fas fa-lock me-2"></i>
+                                آزمون قفل شده
+                            </button>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
             </div>
         </div>
     </div>

@@ -27,6 +27,8 @@ urlpatterns = [
     path('', include('courses.urls', namespace='courses')),
     path('', include('lkncmmnt.urls', namespace='lkncmmnt')),
     path('accounts/', include('accounts.urls')),
+    path('cart/', include('cart.urls')),
+    path('exams/', include('exams.urls')),
     
     # Update login URL to use custom view
     path('login/', user_views.login_view, name='login'),

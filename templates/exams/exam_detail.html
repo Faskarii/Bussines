@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+
+{% block body %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <div class="text-center mb-4">
+                        <h2>آزمون پایانی دوره {{ course.name }}</h2>
+                        <p class="text-muted">
+                            تعداد سوالات: {{ exam.question_count }} سوال
+                            <br>
+                            حداقل نمره قبولی: {{ exam.passing_score }}%
+                        </p>
+                    </div>
+
+                    <form method="post" action="{% url 'exams:submit_exam' course.id %}">
+                        {% csrf_token %}
+                        
+                        {% for question in questions %}
+                        <div class="question-box mb-4 p-4 border rounded">
+                            <h5 class="mb-3">
+                                <span class="badge bg-primary me-2">{{ forloop.counter }}</span>
+                                {{ question.text }}
+                            </h5>
+                            
+                            <div class="choices">
+                                {% for choice in question.choices.all %}
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="radio" 
+                                           name="question_{{ question.id }}" 
+                                           id="choice_{{ choice.id }}"
+                                           value="{{ choice.id }}"
+                                           required>
+                                    <label class="form-check-label" for="choice_{{ choice.id }}">
+                                        {{ choice.text }}
+                                    </label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                        
+                        <div class="text-center mt-4">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-check-circle me-2"></i>
+                                ثبت پاسخ‌ها
+                            </button>
+                            <a href="{% url 'courses:course_detail' course.slug %}" class="btn btn-outline-secondary btn-lg ms-2">
+                                <i class="fas fa-times me-2"></i>
+                                انصراف
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    border-radius: 1rem;
+}
+
+.question-box {
+    background-color: #f8f9fa;
+    border-radius: 0.5rem;
+    transition: all 0.3s ease;
+}
+
+.question-box:hover {
+    background-color: #fff;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+.badge {
+    font-size: 1rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.5rem;
+}
+
+.form-check-input {
+    width: 1.25rem;
+    height: 1.25rem;
+    margin-top: 0.25rem;
+}
+
+.form-check-label {
+    padding-right: 0.5rem;
+    font-size: 1.1rem;
+}
+
+.btn-lg {
+    padding: 0.75rem 1.5rem;
+    font-size: 1.1rem;
+    border-radius: 0.5rem;
+}
+</style>
+{% endblock %} 
