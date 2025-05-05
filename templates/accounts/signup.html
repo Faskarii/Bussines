@@ -41,7 +41,27 @@
                                 </div>
                             {% endif %}
                         </div>
+                        <div class="mb-3">
+    <label for="first_name" class="form-label">نام</label>
+    <input type="text" class="form-control {% if form.first_name.errors %}is-invalid{% endif %}"
+           id="first_name" name="first_name" value="{{ form.first_name.value|default:'' }}">
+    {% if form.first_name.errors %}
+        <div class="invalid-feedback">
+            {{ form.first_name.errors.0 }}
+        </div>
+    {% endif %}
+</div>
 
+<div class="mb-3">
+    <label for="last_name" class="form-label">نام خانوادگی</label>
+    <input type="text" class="form-control {% if form.last_name.errors %}is-invalid{% endif %}"
+           id="last_name" name="last_name" value="{{ form.last_name.value|default:'' }}">
+    {% if form.last_name.errors %}
+        <div class="invalid-feedback">
+            {{ form.last_name.errors.0 }}
+        </div>
+    {% endif %}
+</div>
                         <div class="mb-3">
                             <label for="password1" class="form-label">رمز عبور</label>
                             <input type="password" class="form-control {% if form.password1.errors %}is-invalid{% endif %}" 

@@ -75,6 +75,16 @@
                                 </div>
                             {% endif %}
                         </div>
+
+                        <div class="mb-3">
+                            <label for="id_pdf_file" class="form-label">فایل PDF</label>
+                            {{ form.pdf_file }}
+                            {% if form.pdf_file.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.pdf_file.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
                         
                         <div class="d-grid gap-2">
                             <button type="submit" class="btn btn-primary btn-lg">

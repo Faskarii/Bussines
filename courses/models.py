@@ -11,15 +11,37 @@ def persian_slugify(text):
     translation = str.maketrans(persian_numbers, english_numbers)
     text = text.translate(translation)
     
-    # حذف کاراکترهای خاص و تبدیل فاصله به خط تیره
-    text = re.sub(r'[^\w\s-]', '', text)
-    text = re.sub(r'[\s]+', '-', text)
+    # تبدیل کاراکترهای فارسی/عربی به انگلیسی
+    persian_chars = {
+        'ا': 'a', 'آ': 'a', 'ب': 'b', 'پ': 'p', 'ت': 't', 'ث': 's', 
+        'ج': 'j', 'چ': 'ch', 'ح': 'h', 'خ': 'kh', 'د': 'd', 'ذ': 'z',
+        'ر': 'r', 'ز': 'z', 'ژ': 'zh', 'س': 's', 'ش': 'sh', 'ص': 's',
+        'ض': 'z', 'ط': 't', 'ظ': 'z', 'ع': 'a', 'غ': 'gh', 'ف': 'f',
+        'ق': 'gh', 'ک': 'k', 'گ': 'g', 'ل': 'l', 'م': 'm', 'ن': 'n',
+        'و': 'v', 'ه': 'h', 'ی': 'y', 'ئ': 'y', 'ي': 'y', 'ة': 'h',
+        ' ': '-', '_': '-'
+    }
+    
+    # تبدیل به حروف کوچک
+    text = text.lower()
+    
+    # تبدیل کاراکترهای فارسی به انگلیسی
+    for persian, english in persian_chars.items():
+        text = text.replace(persian, english)
+    
+    # حذف همه کاراکترها به جز حروف انگلیسی، اعداد و خط تیره
+    text = ''.join(c for c in text if c.isalnum() or c == '-')
     
     # حذف خط تیره‌های تکراری
-    text = re.sub(r'[-]+', '-', text)
+    while '--' in text:
+        text = text.replace('--', '-')
     
     # حذف خط تیره از ابتدا و انتها
     text = text.strip('-')
+    
+    # اگر رشته خالی شد، یک مقدار پیش‌فرض برگردان
+    if not text:
+        text = 'untitled'
     
     return text
 
@@ -87,12 +109,40 @@ class Course(models.Model):
     def enrolled_students(self):
         return self.orderitem_set.filter(order__status='completed').values_list('order__user', flat=True).distinct().count()
 
+    def get_progress_for_user(self, user):
+        if not user.is_authenticated:
+            return 0
+        
+        # بررسی دسترسی کاربر
+        has_purchased = OrderItem.objects.filter(
+            order__user=user,
+            order__status='completed',
+            course=self
+        ).exists()
+        
+        # اگر کاربر دوره را نخریده باشد، پیشرفت 0 است
+        if not has_purchased:
+            return 0
+        
+        total_lessons = self.lessons.count()
+        if total_lessons == 0:
+            return 100  # اگر درسی وجود نداشت، پیشرفت 100٪ است
+        
+        completed_lessons = 0
+        for lesson in self.lessons.all():
+            progress = lesson.progress.filter(user=user).first()
+            if progress and progress.is_completed:
+                completed_lessons += 1
+        
+        return int((completed_lessons / total_lessons) * 100)
+
 
 class Lesson(models.Model):
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='lessons')
     title = models.CharField(max_length=200)
     content = models.TextField(blank=True, null=True)
-    video = models.FileField(upload_to='lessons/', null=True, blank=True)
+    video = models.FileField(upload_to='lessons/videos/', null=True, blank=True)
+    pdf_file = models.FileField(upload_to='lessons/pdfs/', null=True, blank=True)
     order = models.IntegerField(default=0)
     duration = models.IntegerField(help_text='Duration in minutes')
     completed_by = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='completed_lessons', blank=True)
@@ -182,3 +232,32 @@ class ContactMessage(models.Model):
 
     def __str__(self):
         return f"{self.name} - {self.subject}"
+
+
+class LessonProgress(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='lesson_progress')
+    lesson = models.ForeignKey('Lesson', on_delete=models.CASCADE, related_name='progress')
+    video_watched = models.BooleanField(default=False)
+    pdf_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ('user', 'lesson')
+
+    def __str__(self):
+        return f"{self.user.username}'s progress in {self.lesson.title}"
+
+    @property
+    def is_completed(self):
+        # اگر درس هم ویدیو و هم PDF داشت
+        if self.lesson.video and self.lesson.pdf_file:
+            return self.video_watched and self.pdf_read
+        # اگر فقط ویدیو داشت
+        elif self.lesson.video:
+            return self.video_watched
+        # اگر فقط PDF داشت
+        elif self.lesson.pdf_file:
+            return self.pdf_read
+        # اگر هیچ کدام را نداشت
+        return True

@@ -62,22 +62,31 @@
     padding: 0.9rem 1.7rem;
     font-size: 1.15rem;
   }
+  .pagination {
+    margin: 2rem 0;
+  }
   .pagination .page-link {
-    border-radius: 1rem !important;
+    padding: 0.5rem 1rem;
     color: #2563eb;
+    background-color: #f8fafc;
     border: none;
     margin: 0 0.2rem;
-    background: #f1f5f9;
-    transition: background 0.18s, color 0.18s;
+    border-radius: 0.8rem;
+    transition: all 0.2s ease;
   }
   .pagination .page-item.active .page-link {
-    background: #2563eb;
+    background: linear-gradient(90deg, #6366f1 60%, #2563eb 100%);
     color: #fff;
-    font-weight: bold;
+    box-shadow: 0 4px 12px rgba(37,99,235,0.15);
   }
-  .pagination .page-link:hover {
-    background: #a5b4fc;
-    color: #2563eb;
+  .pagination .page-link:hover:not(.active) {
+    background-color: #e2e8f0;
+    color: #1e40af;
+    transform: translateY(-2px);
+  }
+  .pagination .page-item:first-child .page-link,
+  .pagination .page-item:last-child .page-link {
+    border-radius: 0.8rem;
   }
   .course-instructor-box, .course-price {
     display: flex;
@@ -143,102 +152,138 @@
 {% endif %}
 
 <div class="row justify-content-center">
-  {% for course in courses %}
+  {% for course_data in courses_with_progress %}
   <div class="col-md-4 col-lg-3 mb-4 d-flex align-items-stretch">
     <div class="card course-card w-100">
       <div class="position-relative">
         <img
-          src="/media/{{ course.image }}"
+          src="/media/{{ course_data.course.image }}"
           class="course-image w-100"
-          alt="{{ course.name }}"
+          alt="{{ course_data.course.name }}"
         />
         <div
           class="position-absolute bottom-0 start-0 end-0 p-2"
           style="background: linear-gradient(to top, rgba(0,0,0,0.7), transparent); border-bottom-left-radius: 1.7rem; border-bottom-right-radius: 1.7rem;"
         >
           <a
-            href="{% url 'courses:course_detail' course.slug %}"
+            href="{% url 'courses:course_detail' course_data.course.slug %}"
             class="text-decoration-none"
           >
-            <h5 class="text-white mb-0" id="nm{{ course.id }}">
-              {{ course.name }}
+            <h5 class="text-white mb-0" id="nm{{ course_data.course.id }}">
+              {{ course_data.course.name }}
             </h5>
           </a>
         </div>
       </div>
       <div class="course-info">
         <div class="d-flex justify-content-between align-items-center mb-3">
-          <div class="d-flex align-items-center course-instructor-box" style="background:#f1f5f9; border-radius:1.2rem; padding:0.35rem 1.2rem; min-width:0; flex:1; font-size:1rem; font-weight:500;">
+          <div class="d-flex align-items-center course-instructor-box">
             <i class="fas fa-user-tie me-1"></i>
-            <span class="text-truncate" style="max-width:110px;">{% if course.teacher %}{{ course.teacher.get_full_name|default:course.teacher.username }}{% else %}مدرسی تعیین نشده است{% endif %}</span>
-                        </div>
-          <a id="{{ course.id }}" class="btn-like ms-2" style="cursor: pointer;">
-                                    {% if logged_user in course.liked_by.all %}
+            <span class="text-truncate" style="max-width:110px;">{% if course_data.course.teacher %}{{ course_data.course.teacher.get_full_name|default:course_data.course.teacher.username }}{% else %}مدرسی تعیین نشده است{% endif %}</span>
+          </div>
+          <a id="{{ course_data.course.id }}" class="btn-like ms-2" style="cursor: pointer;">
+            {% if logged_user in course_data.course.liked_by.all %}
             <img src="{% static 'users/images/redheart.png' %}" alt="پسندیده شده" width="20" />
-                                    {% else %}
+            {% else %}
             <img src="{% static 'users/images/like.png' %}" alt="پسندیدن" width="20" />
-                                    {% endif %}
-                                </a>
-                        </div>
+            {% endif %}
+          </a>
+        </div>
         <div class="mb-3">
-          <div class="course-price w-100 text-center">{{ course.price|intcomma }} تومان</div>
+          <div class="course-price w-100 text-center">{{ course_data.course.price|intcomma }} تومان</div>
         </div>
         <div class="d-flex justify-content-center align-items-center mt-2">
-          {% if course.id in taught_course_ids %}
+          {% if course_data.course.id in taught_course_ids %}
             <div class="alert alert-info mb-0 py-1 px-2 w-100 text-center" style="font-size:0.95rem; border-radius:1rem; background:#e0f2fe; color:#2563eb; border:none;">
               <i class="fas fa-chalkboard-teacher me-1"></i>
               شما مدرس این دوره هستید
             </div>
-          {% elif course.id in purchased_course_ids %}
-            <button class="btn btn-success btn-sm rounded-4 px-3 w-100" disabled>
-              <i class="fas fa-check me-1"></i>
-              خریداری شده
-            </button>
-          {% elif course.id in pending_course_ids %}
+          {% elif course_data.course.id in purchased_course_ids %}
+            <div class="d-flex align-items-center w-100">
+              <div class="progress flex-grow-1" style="height: 10px; border-radius: 1rem; background-color: #e2e8f0;">
+                <div class="progress-bar bg-success" role="progressbar" 
+                     style="width: {{ course_data.progress }}%; border-radius: 1rem;" 
+                     aria-valuenow="{{ course_data.progress }}" 
+                     aria-valuemin="0" 
+                     aria-valuemax="100">
+                </div>
+              </div>
+              <span class="ms-2 text-success fw-bold">{{ course_data.progress }}%</span>
+            </div>
+          {% elif course_data.course.id in pending_course_ids %}
             <button class="btn btn-warning btn-sm rounded-4 px-3 w-100" disabled>
               <i class="fas fa-clock me-1"></i>
               در انتظار پرداخت
             </button>
           {% else %}
-            <button class="btn btn-primary btn-sm rounded-4 px-3 w-100 atc" id="{{ course.id }}">
-              <i class="fas fa-shopping-cart me-1"></i>
+            <button class="btn btn-primary w-100" onclick="addToCart({{ course_data.course.id }})">
+              <i class="fas fa-shopping-cart me-2"></i>
               افزودن به سبد خرید
             </button>
           {% endif %}
-                        </div>
-                    </div>
-                </div>
-            </div>
-            {% endfor %}
         </div>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
 
-    <!-- Pagination -->
-        <div class="row">
-            <div class="col-md-3 offset-md-4">
-    <ul class="pagination justify-content-center">
-                    {% if courses.has_previous %}
-                        <li class="page-item">
-        <a class="page-link" href="?page={{ courses.previous_page_number }}">قبلی</a>
-                        </li>
-                    {% endif %}
-                    <li class="page-item active">
-        <a class="page-link" href="?page={{ courses.number }}">{{ courses.number }}</a>
+<!-- Pagination -->
+{% if page_obj.paginator.num_pages > 1 %}
+<div class="row">
+    <div class="col-12">
+        <nav aria-label="صفحه‌بندی">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1{% if search_query %}&name={{ search_query }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}">
+                            <i class="fas fa-angle-double-right"></i>
+                        </a>
                     </li>
-                    {% if courses.has_next %}
-                        <li class="page-item">
-        <a class="page-link" href="?page={{ courses.next_page_number }}">بعدی</a>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search_query %}&name={{ search_query }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}">
+                            <i class="fas fa-angle-right"></i>
+                        </a>
+                    </li>
+                {% endif %}
+                
+                {% for num in page_obj.paginator.page_range %}
+                    {% if num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                        <li class="page-item {% if num == page_obj.number %}active{% endif %}">
+                            <a class="page-link" href="?page={{ num }}{% if search_query %}&name={{ search_query }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}">
+                                {{ num }}
+                            </a>
                         </li>
                     {% endif %}
-                </ul>
-            </div>
-        </div>
+                {% endfor %}
+                
+                {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search_query %}&name={{ search_query }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}">
+                            <i class="fas fa-angle-left"></i>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if search_query %}&name={{ search_query }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}">
+                            <i class="fas fa-angle-double-left"></i>
+                        </a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+        <p class="text-center text-muted">
+            صفحه {{ page_obj.number }} از {{ page_obj.paginator.num_pages }}
+        </p>
+    </div>
+</div>
+{% endif %}
 
 <!-- Hidden CSRF Token -->
 {% csrf_token %} 
 {% endblock %}
 
 {% block script %}
-    <script type="text/javascript">
+<script type="text/javascript">
   function showAlert(message, type = "success") {
     $(".alert-message").remove();
     const alertDiv = $(`
@@ -275,34 +320,38 @@
     });
   }
 
-$(document).ready(function () {
-    $(".atc").click(function () {
-      addToCart($(this).attr("id"));
-    });
-
-    window.CSRF_TOKEN = "{{ csrf_token }}";
-    $(document).on("click", ".btn-like", function () {
-        var $btn = $(this);
-        var course_id = this.id;
-        $.ajax({
-            method: "POST",
-        url: "/like",
-            data: {
-                course_id: course_id,
-          csrfmiddlewaretoken: window.CSRF_TOKEN,
+  $(document).ready(function () {
+    // Handle like button clicks
+    $(".btn-like").click(function () {
+      var $btn = $(this);
+      var courseId = $btn.attr("id");
+      
+      $.ajax({
+        url: "{% url 'courses:like' %}",
+        type: "POST",
+        data: {
+          course_id: courseId,
+          csrfmiddlewaretoken: $("[name=csrfmiddlewaretoken]").val()
         },
         success: function (response) {
-          var imgSrc = response.liked
-            ? "/static/users/images/redheart.png"
-            : "/static/users/images/like.png";
-          $btn.find("img").attr("src", imgSrc);
+          if (response.liked) {
+            $btn.find("img").attr("src", "{% static 'users/images/redheart.png' %}");
+            showAlert("<strong>موفق!</strong> دوره به علاقه‌مندی‌های شما اضافه شد", "success");
+          } else {
+            $btn.find("img").attr("src", "{% static 'users/images/like.png' %}");
+            showAlert("<strong>موفق!</strong> دوره از علاقه‌مندی‌های شما حذف شد", "success");
+          }
         },
         error: function (xhr) {
-          console.error("Error:", xhr.responseText);
-        },
-        });
+          if (xhr.status === 403) {
+            showAlert("<strong>خطا!</strong> لطفا ابتدا وارد شوید", "warning");
+          } else {
+            showAlert("<strong>خطا!</strong> مشکلی در ثبت علاقه‌مندی رخ داد", "danger");
+          }
+        }
+      });
     });
-});
+  });
 </script>
 
 <style>

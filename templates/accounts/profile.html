@@ -30,20 +30,20 @@
         <div class="col-lg-9">
             <!-- Navigation Tabs -->
             <ul class="nav nav-tabs mb-4" id="profileTabs" role="tablist">
-                <li class="nav-item">
-                    <a class="nav-link {% if active_tab == 'courses' %}active{% endif %}" id="courses-tab" data-bs-toggle="tab" href="#courses" role="tab">
-                        <i class="fas fa-graduation-cap me-1"></i>دوره‌های من
-                    </a>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active text-primary" id="courses-tab" data-bs-toggle="tab" data-bs-target="#courses" type="button" role="tab" aria-controls="courses" aria-selected="true">
+                        <i class="fas fa-graduation-cap me-2"></i>دوره‌های من
+                    </button>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link {% if active_tab == 'liked' %}active{% endif %}" id="liked-tab" data-bs-toggle="tab" href="#liked" role="tab">
-                        <i class="fas fa-heart me-1"></i>علاقه‌مندی‌ها
-                    </a>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link text-primary" id="favorites-tab" data-bs-toggle="tab" data-bs-target="#favorites" type="button" role="tab" aria-controls="favorites" aria-selected="false">
+                        <i class="fas fa-heart me-2"></i>علاقه‌مندی‌ها
+                    </button>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link {% if active_tab == 'orders' %}active{% endif %}" id="orders-tab" data-bs-toggle="tab" href="#orders" role="tab">
-                        <i class="fas fa-shopping-cart me-1"></i>تاریخچه سفارشات
-                    </a>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link text-primary" id="orders-tab" data-bs-toggle="tab" data-bs-target="#orders" type="button" role="tab" aria-controls="orders" aria-selected="false">
+                        <i class="fas fa-shopping-cart me-2"></i>تاریخچه سفارشات
+                    </button>
                 </li>
             </ul>
 
@@ -52,17 +52,34 @@
                 <!-- Purchased Courses -->
                 <div class="tab-pane fade {% if active_tab == 'courses' %}show active{% endif %}" id="courses" role="tabpanel">
                     <div class="row">
-                        {% for course in purchased_courses %}
+                        {% for course_data in purchased_courses %}
+                        {% with course=course_data.course progress=course_data.progress %}
                         <div class="col-md-6 mb-4">
                             <div class="card border-0 shadow-sm h-100">
                                 <img src="/media/{{ course.image }}" class="card-img-top" alt="{{ course.name }}" style="height: 200px; object-fit: cover;">
                                 <div class="card-body">
                                     <h5 class="card-title">{{ course.name }}</h5>
                                     <p class="card-text text-muted small">{{ course.description|truncatechars:100 }}</p>
-                                    <a href="{% url 'courses:course_detail' course.id %}" class="btn btn-primary btn-sm">مشاهده دوره</a>
+                                    <!-- نمایش درصد پیشرفت -->
+                                    <div class="d-flex align-items-center w-100 mb-3">
+                                        <div class="progress flex-grow-1" style="height: 10px; border-radius: 1rem; background-color: #e2e8f0;">
+                                            <div class="progress-bar bg-success" role="progressbar" 
+                                                 style="width: {{ progress }}%; border-radius: 1rem;" 
+                                                 aria-valuenow="{{ progress }}" 
+                                                 aria-valuemin="0" 
+                                                 aria-valuemax="100">
+                                            </div>
+                                        </div>
+                                        <span class="ms-2 text-success fw-bold">{{ progress }}%</span>
+                                    </div>
+                                    <a href="{% url 'courses:course_detail' course.slug %}" class="btn btn-success btn-sm w-100">
+                                        <i class="fas fa-play me-1"></i>
+                                        ادامه یادگیری
+                                    </a>
                                 </div>
                             </div>
                         </div>
+                        {% endwith %}
                         {% empty %}
                         <div class="col-12">
                             <div class="alert alert-info">
@@ -74,7 +91,7 @@
                 </div>
 
                 <!-- Liked Courses -->
-                <div class="tab-pane fade {% if active_tab == 'liked' %}show active{% endif %}" id="liked" role="tabpanel">
+                <div class="tab-pane fade {% if active_tab == 'liked' %}show active{% endif %}" id="favorites" role="tabpanel">
                     <div class="row">
                         {% for course in liked_courses %}
                         <div class="col-md-6 mb-4">
@@ -83,14 +100,23 @@
                                 <div class="card-body">
                                     <h5 class="card-title">{{ course.name }}</h5>
                                     <p class="card-text text-muted small">{{ course.description|truncatechars:100 }}</p>
-                                    <a href="{% url 'courses:course_detail' course.slug %}" class="btn btn-primary btn-sm">مشاهده دوره</a>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <a href="{% url 'courses:course_detail' course.slug %}" class="btn btn-primary btn-sm">
+                                            <i class="fas fa-eye me-1"></i>مشاهده دوره
+                                        </a>
+                                        <!-- <button class="btn btn-link text-danger btn-sm remove-like" data-course-id="{{ course.id }}">
+                                            <i class="fas fa-heart-broken"></i>
+                                            حذف از علاقه‌مندی‌ها
+                                        </button> -->
+                                    </div>
                                 </div>
                             </div>
                         </div>
                         {% empty %}
                         <div class="col-12">
                             <div class="alert alert-info">
-                                هنوز دوره‌ای را لایک نکرده‌اید.
+                                <i class="fas fa-info-circle me-2"></i>
+                                هنوز دوره‌ای را به علاقه‌مندی‌ها اضافه نکرده‌اید.
                             </div>
                         </div>
                         {% endfor %}
@@ -214,4 +240,65 @@
     </div>
 </div>
 {% endfor %}
+
+<style>
+.nav-tabs .nav-link {
+  color: #2563eb !important;
+  font-weight: 500;
+}
+
+.nav-tabs .nav-link:hover,
+.nav-tabs .nav-link.active {
+  color: #1e40af !important;
+  border-color: #2563eb;
+}
+
+.nav-tabs .nav-link.active {
+  border-bottom: 2px solid #2563eb;
+}
+</style>
+{% endblock %}
+
+{% block script %}
+{{ block.super }}
+<script>
+$(document).ready(function() {
+    // Handle like/unlike functionality
+    $(".btn-like, .remove-like").click(function() {
+        var courseId = $(this).data("course-id");
+        var $btn = $(this);
+        
+        $.ajax({
+            url: "{% url 'courses:like' %}",
+            type: "POST",
+            data: {
+                course_id: courseId,
+                csrfmiddlewaretoken: $("[name=csrfmiddlewaretoken]").val()
+            },
+            success: function(response) {
+                if (response.liked) {
+                    showAlert("<strong>موفق!</strong> دوره به علاقه‌مندی‌های شما اضافه شد", "success");
+                    // Refresh the page to update the favorites tab
+                    if ($btn.hasClass('remove-like')) {
+                        location.reload();
+                    }
+                } else {
+                    showAlert("<strong>موفق!</strong> دوره از علاقه‌مندی‌های شما حذف شد", "success");
+                    // Refresh the page to update the favorites tab
+                    if ($btn.hasClass('remove-like')) {
+                        location.reload();
+                    }
+                }
+            },
+            error: function(xhr) {
+                if (xhr.status === 403) {
+                    showAlert("<strong>خطا!</strong> لطفا ابتدا وارد شوید", "warning");
+                } else {
+                    showAlert("<strong>خطا!</strong> مشکلی در ثبت علاقه‌مندی رخ داد", "danger");
+                }
+            }
+        });
+    });
+});
+</script>
 {% endblock %} 

@@ -73,11 +73,12 @@ class CourseForm(forms.ModelForm):
 class LessonForm(forms.ModelForm):
     class Meta:
         model = Lesson
-        fields = ['title', 'content', 'video', 'duration', 'order']
+        fields = ['title', 'content', 'video', 'pdf_file', 'duration', 'order']
         widgets = {
             'title': forms.TextInput(attrs={'class': 'form-control'}),
             'content': forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
             'video': forms.FileInput(attrs={'class': 'form-control'}),
+            'pdf_file': forms.FileInput(attrs={'class': 'form-control'}),
             'duration': forms.NumberInput(attrs={'class': 'form-control'}),
             'order': forms.NumberInput(attrs={'class': 'form-control'}),
         }
@@ -87,6 +88,9 @@ class LessonForm(forms.ModelForm):
         self.fields['content'].required = False
         self.fields['order'].required = False
         self.fields['video'].required = False
+        self.fields['pdf_file'].required = False
+        self.fields['video'].label = 'فایل ویدیو'
+        self.fields['pdf_file'].label = 'فایل PDF'
 
     def clean_duration(self):
         duration = self.cleaned_data.get('duration')
@@ -99,3 +103,12 @@ class LessonForm(forms.ModelForm):
         if order is not None and order < 0:
             raise forms.ValidationError('ترتیب درس نمی‌تواند منفی باشد.')
         return order
+
+    def clean(self):
+        cleaned_data = super().clean()
+        video = cleaned_data.get('video')
+        pdf_file = cleaned_data.get('pdf_file')
+        content = cleaned_data.get('content')
+
+        if not any([video, pdf_file, content]):
+            raise forms.ValidationError('حداقل یکی از فیلدهای ویدیو، PDF یا محتوا باید پر شود.')

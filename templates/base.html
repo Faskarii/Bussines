@@ -134,17 +134,24 @@
                             <a class="nav-link" href="{% url 'courses:contact' %}">تماس با ما</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="{% url 'courses:view_cart' %}">
-                                سبد خرید
-                                <span class="badge bg-danger" id="cart-count">{{ cart_count }}</span>
-                            </a>
+                            {% if user.is_authenticated %}
+                                <a class="nav-link" href="{% url 'courses:view_cart' %}">
+                                    سبد خرید
+                                    <span class="badge bg-danger" id="cart-count">{{ cart_count }}</span>
+                                </a>
+                            {% else %}
+                                <a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#loginRequiredModal">
+                                    سبد خرید
+                                    <span class="badge bg-danger">0</span>
+                                </a>
+                            {% endif %}
                         </li>
                     </ul>
                     <div class="d-flex align-items-center">
                         {% if user.is_authenticated %}
                             <div class="dropdown">
-                                <a href="#" class="d-flex align-items-center text-decoration-none dropdown-toggle" id="userDropdown" data-bs-toggle="dropdown">
-                                    <span class="me-1">{{ user.get_full_name|default:user.username }}</span>
+                                <a class="nav-link dropdown-toggle text-white" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    {{ request.user.get_full_name|default:request.user.username }}
                                 </a>
                                 <ul class="dropdown-menu dropdown-menu-end">
                                     <li>
@@ -169,7 +176,7 @@
                                 </ul>
                             </div>
                         {% else %}
-                            <a href="{% url 'login' %}" class="btn btn-outline-primary me-2">ورود</a>
+                            <a href="{% url 'login' %}" class="btn btn-primary me-2">ورود</a>
                             <a href="{% url 'users:signup' %}" class="btn btn-primary">ثبت نام</a>
                         {% endif %}
                     </div>
@@ -221,5 +228,29 @@
     });
     </script>
     {% endblock %}
+
+    <!-- Login Required Modal -->
+    <div class="modal fade" id="loginRequiredModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header border-0">
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center p-4">
+                    <i class="fas fa-user-lock fa-3x text-primary mb-3"></i>
+                    <h5 class="modal-title mb-3">نیاز به ورود</h5>
+                    <p class="text-muted mb-4">برای مشاهده سبد خرید، لطفاً ابتدا وارد حساب کاربری خود شوید.</p>
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'login' %}" class="btn btn-primary">
+                            <i class="fas fa-sign-in-alt me-2"></i>ورود به حساب کاربری
+                        </a>
+                        <a href="{% url 'users:signup' %}" class="btn btn-outline-primary">
+                            <i class="fas fa-user-plus me-2"></i>ثبت نام
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 </html>

@@ -39,38 +39,78 @@
                     </div>
                     {% endif %}
 
+                    <!-- نمایش درصد پیشرفت کلی دوره -->
+                    {% if has_purchased %}
+                    <div class="course-progress mb-4">
+                        <h4 class="mb-3">پیشرفت شما در این دوره</h4>
+                        <div class="d-flex align-items-center">
+                            <div class="progress flex-grow-1" style="height: 15px; border-radius: 1rem; background-color: #e2e8f0;">
+                                <div class="progress-bar bg-success" role="progressbar" 
+                                     style="width: {{ course_progress }}%; border-radius: 1rem;" 
+                                     aria-valuenow="{{ course_progress }}" 
+                                     aria-valuemin="0" 
+                                     aria-valuemax="100">
+                                </div>
+                            </div>
+                            <span class="ms-3 text-success fw-bold h5 mb-0">{{ course_progress }}%</span>
+                        </div>
+                    </div>
+                    {% endif %}
+
                     <!-- نمایش درس‌ها -->
                     <div class="mb-4">
                         <h5 class="mb-3">درس‌های دوره</h5>
                         {% if request.user == course.teacher or has_purchased %}
                             <div class="list-group">
-                                {% for lesson in lessons %}
-                                <div class="list-group-item">
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <div>
-                                            <h6 class="mb-1">{{ lesson.title }}</h6>
-                                            <small class="text-muted">مدت زمان: {{ lesson.duration }} دقیقه</small>
-                                        </div>
-                                        <div class="d-flex gap-2">
-                                            {% if request.user == course.teacher %}
-                                                <a href="{% url 'courses:edit_lesson' lesson.id %}" class="btn btn-sm btn-outline-primary">
-                                                    <i class="fas fa-edit me-1"></i>
-                                                    ویرایش
-                                                </a>
-                                                <a href="{% url 'courses:delete_lesson' lesson.id %}" class="btn btn-sm btn-outline-danger">
-                                                    <i class="fas fa-trash me-1"></i>
-                                                    حذف
-                                                </a>
-                                            {% endif %}
-                                            {% if has_purchased or request.user == course.teacher %}
-                                                <a href="{{ lesson.video.url }}" class="btn btn-sm btn-primary" target="_blank">
-                                                    <i class="fas fa-play me-1"></i>
-                                                    مشاهده
-                                                </a>
-                                            {% endif %}
+                                {% for lesson_data in lessons %}
+                                    {% with lesson=lesson_data.lesson progress=lesson_data.progress %}
+                                    <div class="list-group-item">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <h6 class="mb-1">{{ lesson.title }}</h6>
+                                                <small class="text-muted">مدت زمان: {{ lesson.duration }} دقیقه</small>
+                                            </div>
+                                            <div class="d-flex gap-2">
+                                                {% if request.user == course.teacher %}
+                                                    <a href="{% url 'courses:edit_lesson' lesson.id %}" class="btn btn-sm btn-outline-primary">
+                                                        <i class="fas fa-edit me-1"></i>
+                                                        ویرایش
+                                                    </a>
+                                                    <a href="{% url 'courses:delete_lesson' lesson.id %}" class="btn btn-sm btn-outline-danger">
+                                                        <i class="fas fa-trash me-1"></i>
+                                                        حذف
+                                                    </a>
+                                                {% endif %}
+                                                {% if has_purchased or request.user == course.teacher %}
+                                                    {% if lesson.video %}
+                                                        <button class="btn btn-primary watch-video" 
+                                                                data-lesson-id="{{ lesson.id }}"
+                                                                data-video-url="{{ lesson.video.url }}"
+                                                                {% if progress.video_watched %}disabled{% endif %}>
+                                                            {% if progress.video_watched %}
+                                                                <i class="fas fa-check"></i> ویدیو مشاهده شده
+                                                            {% else %}
+                                                                مشاهده ویدیو
+                                                            {% endif %}
+                                                        </button>
+                                                    {% endif %}
+                                                    {% if lesson.pdf_file %}
+                                                        <button class="btn btn-info read-pdf"
+                                                                data-lesson-id="{{ lesson.id }}"
+                                                                data-pdf-url="{{ lesson.pdf_file.url }}"
+                                                                {% if progress.pdf_read %}disabled{% endif %}>
+                                                            {% if progress.pdf_read %}
+                                                                <i class="fas fa-check"></i> PDF مطالعه شده
+                                                            {% else %}
+                                                                مطالعه PDF
+                                                            {% endif %}
+                                                        </button>
+                                                    {% endif %}
+                                                {% endif %}
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
+                                    {% endwith %}
                                 {% empty %}
                                 <div class="alert alert-info">
                                     هنوز درسی برای این دوره اضافه نشده است.
@@ -118,9 +158,8 @@
 
         <!-- سایدبار -->
         <div class="col-lg-4">
-{#            <div class="card border-0 shadow-sm sticky-top">#}
             <div class="card border-0 shadow-sm position-sticky mb-3" style="top: 20px;">
-            <div class="card-body">
+                <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <h5 class="mb-0">قیمت دوره</h5>
                         <span class="h4 mb-0">{{ course.price|intcomma }} تومان</span>
@@ -154,8 +193,7 @@
                 </div>
             </div>
 
-{#            <div class="card border-0 shadow-sm">#}
-        <div class="card border-0 shadow-sm position-sticky" style="top: 250px;">
+            <div class="card border-0 shadow-sm position-sticky" style="top: 250px;">
                 <div class="card-body">
                     <h5 class="mb-3">اطلاعات دوره</h5>
                     <ul class="list-unstyled">
@@ -189,24 +227,25 @@
 </div>
 
 <!-- Modal برای نمایش ویدیو -->
-<div class="modal fade" id="videoModal" tabindex="-1" aria-labelledby="videoModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
+<div class="modal fade" id="videoModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="videoModalLabel">پخش ویدیو</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <h5 class="modal-title">مشاهده ویدیو</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <div class="ratio ratio-16x9">
-                    <video id="videoPlayer" controls class="w-100">
-                        <source id="videoSource" src="" type="video/mp4">
-                        مرورگر شما از پخش ویدیو پشتیبانی نمی‌کند.
-                    </video>
-                </div>
+                <video id="videoPlayer" class="w-100" controls>
+                    <source src="" type="video/mp4">
+                    مرورگر شما از پخش ویدیو پشتیبانی نمی‌کند.
+                </video>
             </div>
         </div>
     </div>
 </div>
+
+<!-- محل نمایش پیام‌ها -->
+<div id="message-container" class="position-fixed top-0 start-50 translate-middle-x mt-3" style="z-index: 1050;"></div>
 
 <style>
 .img-fluid {
@@ -272,56 +311,123 @@ function showAlert(message, type = 'success') {
 }
 
 function addToCart(courseId) {
-    console.log('Add to cart button clicked');
-    console.log('Item ID:', courseId);
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
     
-    $.ajax({
-        url: `/cart/add/${courseId}/`,
-        type: 'POST',
+    fetch(`/cart/add/${courseId}/`, {
+        method: 'POST',
         headers: {
-            'X-CSRFToken': $('[name=csrfmiddlewaretoken]').val()
+            'X-CSRFToken': csrfToken,
+            'Content-Type': 'application/json'
         },
-        success: function(response) {
-            if (response.status === 'success') {
-                // Update cart count
-                $.get('/cart/count/', function(data) {
-                    $('#cart-count').text(data.count);
-                });
-                showAlert('<strong>موفق!</strong> دوره با موفقیت به سبد خرید اضافه شد');
-            } else {
-                showAlert('<strong>هشدار!</strong> ' + response.message, 'warning');
-            }
-        },
-        error: function(error) {
-            console.error('Error:', error);
-            showAlert('<strong>خطا!</strong> خطا در افزودن به سبد خرید', 'danger');
+        credentials: 'same-origin'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            // Update cart count
+            document.getElementById('cartCount').textContent = data.cart_count;
+            
+            // Show success message
+            alert('دوره با موفقیت به سبد خرید اضافه شد.');
+        } else {
+            alert(data.message || 'خطا در افزودن به سبد خرید.');
         }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('خطا در ارتباط با سرور.');
     });
 }
 
-// Add click event listener to all add to cart buttons
 $(document).ready(function() {
     $('.atc').click(function() {
         const courseId = $(this).attr('id');
         addToCart(courseId);
     });
 
-    // Handle video play button clicks
-    $('.play-video').click(function() {
-        const videoUrl = $(this).data('video-url');
-        const videoPlayer = document.getElementById('videoPlayer');
-        const videoSource = document.getElementById('videoSource');
+    // تابع نمایش پیام
+    function showMessage(message, type = 'success') {
+        const alertDiv = $(`
+            <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        `);
+        $('#message-container').html(alertDiv);
+        setTimeout(() => alertDiv.alert('close'), 3000);
+    }
+
+    // ثبت پیشرفت درس
+    function markProgress(lessonId, contentType) {
+        const csrfToken = $('[name=csrfmiddlewaretoken]').val();
         
-        videoSource.src = videoUrl;
-        videoPlayer.load();
-        videoPlayer.play();
+        $.ajax({
+            url: "{% url 'courses:mark_lesson_progress' lesson_id=0 content_type='video' %}".replace('0', lessonId).replace('video', contentType),
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken
+            },
+            success: function(response) {
+                if (response.status === 'success') {
+                    // به‌روزرسانی نوار پیشرفت
+                    $('.progress-bar').css('width', response.progress + '%');
+                    $('.progress-bar').text(response.progress + '%');
+                    
+                    // غیرفعال کردن دکمه
+                    if (contentType === 'video') {
+                        $(`button.watch-video[data-lesson-id="${lessonId}"]`)
+                            .prop('disabled', true)
+                            .html('<i class="fas fa-check"></i> ویدیو مشاهده شده');
+                            
+                        // نمایش ویدیو
+                        const videoUrl = $(`button.watch-video[data-lesson-id="${lessonId}"]`).data('video-url');
+                        if (videoUrl) {
+                            $('#videoPlayer source').attr('src', videoUrl);
+                            $('#videoPlayer')[0].load();
+                            $('#videoModal').modal('show');
+                        }
+                    } else if (contentType === 'pdf') {
+                        $(`button.read-pdf[data-lesson-id="${lessonId}"]`)
+                            .prop('disabled', true)
+                            .html('<i class="fas fa-check"></i> PDF مطالعه شده');
+                            
+                        // باز کردن PDF در تب جدید
+                        const pdfUrl = $(`button.read-pdf[data-lesson-id="${lessonId}"]`).data('pdf-url');
+                        if (pdfUrl) {
+                            window.open(pdfUrl, '_blank');
+                        }
+                    }
+                    
+                    showMessage(response.message);
+                } else {
+                    showMessage(response.message, 'danger');
+                }
+            },
+            error: function(xhr) {
+                let errorMessage = 'خطا در ثبت پیشرفت';
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    errorMessage = xhr.responseJSON.message;
+                }
+                showMessage(errorMessage, 'danger');
+                console.error('Error:', xhr.responseText);
+            }
+        });
+    }
+
+    // اتصال رویدادها به دکمه‌ها
+    $('.watch-video').click(function() {
+        const lessonId = $(this).data('lesson-id');
+        markProgress(lessonId, 'video');
     });
 
-    // Clear video source when modal is closed
-    $('#videoModal').on('hidden.bs.modal', function () {
-        const videoPlayer = document.getElementById('videoPlayer');
-        videoPlayer.pause();
-        videoPlayer.currentTime = 0;
+    $('.read-pdf').click(function() {
+        const lessonId = $(this).data('lesson-id');
+        markProgress(lessonId, 'pdf');
+    });
+
+    // بستن مودال ویدیو
+    $('#videoModal').on('hidden.bs.modal', function() {
+        $('#videoPlayer')[0].pause();
     });
 });
 </script>

@@ -16,13 +16,22 @@ def profile_view(request):
 
     purchased_courses = Course.objects.filter(id__in=purchased_course_ids)
     
+    # محاسبه درصد پیشرفت برای دوره‌های خریداری شده
+    purchased_courses_with_progress = []
+    for course in purchased_courses:
+        progress = course.get_progress_for_user(user)
+        purchased_courses_with_progress.append({
+            'course': course,
+            'progress': progress
+        })
+    
     liked_courses = user.liked_courses.all()
     orders = user.orders.all().order_by('-created_at')
 
     from_checkout = request.GET.get('from_checkout') == 'true'
     
     context = {
-        'purchased_courses': purchased_courses,
+        'purchased_courses': purchased_courses_with_progress,
         'liked_courses': liked_courses,
         'orders': orders,
         'active_tab': 'orders' if from_checkout else 'courses'
@@ -41,16 +50,17 @@ def my_courses_view(request):
 
     courses = Course.objects.filter(id__in=purchased_course_ids)
 
+    # محاسبه درصد پیشرفت برای هر دوره
+    courses_with_progress = []
     for course in courses:
-        total_lessons = course.lessons.count()
-        if total_lessons > 0:
-            completed_lessons = course.lessons.filter(completed_by=user).count()
-            course.progress = int((completed_lessons / total_lessons) * 100)
-        else:
-            course.progress = 0
+        progress = course.get_progress_for_user(user)
+        courses_with_progress.append({
+            'course': course,
+            'progress': progress
+        })
     
     context = {
-        'courses': courses,
+        'courses': courses_with_progress,
     }
     return render(request, 'accounts/my_courses.html', context)
 

@@ -2,13 +2,14 @@ from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required, user_passes_test
 from .forms import CourseForm, LessonForm, TeacherForm
-from .models import Course, Lesson, Teacher, Order, Cart, CartItem, OrderItem, ContactMessage, Category
+from .models import Course, Lesson, Teacher, Order, Cart, CartItem, OrderItem, ContactMessage, Category, LessonProgress
 from django.core.paginator import Paginator
 from lkncmmnt.forms import CommentForm
 from django.contrib import messages
 
 
 def home(request):
+    # Get all published courses with valid slugs
     courses = Course.objects.filter(is_published=True, slug__isnull=False).exclude(slug='').prefetch_related('teacher')
     logged_user = request.user
 
@@ -36,12 +37,24 @@ def home(request):
         courses = courses.filter(name__icontains=course_name)
 
     # paginator code
-    paginator = Paginator(courses, 4)
-    page = request.GET.get('page')
-    courses = paginator.get_page(page)
+    paginator = Paginator(courses, 4)  # Show 8 courses per page
+    page = request.GET.get('page', 1)  # Default to page 1
+    page_obj = paginator.get_page(page)
+    
+    # محاسبه درصد پیشرفت برای هر دوره
+    courses_with_progress = []
+    for course in page_obj:
+        progress = 0
+        if logged_user.is_authenticated and (course.id in purchased_course_ids or course.teacher == logged_user):
+            progress = course.get_progress_for_user(logged_user)
+        courses_with_progress.append({
+            'course': course,
+            'progress': progress
+        })
     
     return render(request, 'index.html', {
-        'courses': courses,
+        'page_obj': page_obj,  # Send the paginated queryset
+        'courses_with_progress': courses_with_progress,  # Send the courses with progress
         'logged_user': logged_user,
         'purchased_course_ids': purchased_course_ids,
         'pending_course_ids': pending_course_ids,
@@ -100,6 +113,7 @@ def course_detail(request, slug):
     has_purchased = False
     has_pending_order = False
     is_teacher = False
+    course_progress = 0
     
     if request.user.is_authenticated:
         # Check if user is the teacher of this course
@@ -118,6 +132,10 @@ def course_detail(request, slug):
                 order__status='pending',
                 course=course
             ).exists()
+        
+        # Get course progress
+        if has_purchased or is_teacher:
+            course_progress = course.get_progress_for_user(request.user)
     
     if request.method == 'POST':
         comment_form = CommentForm(request.POST)
@@ -130,13 +148,25 @@ def course_detail(request, slug):
     else:
         comment_form = CommentForm()
     
+    # Get progress for each lesson
+    lessons_with_progress = []
+    for lesson in lessons:
+        progress = None
+        if request.user.is_authenticated:
+            progress = lesson.progress.filter(user=request.user).first()
+        lessons_with_progress.append({
+            'lesson': lesson,
+            'progress': progress
+        })
+    
     context = {
         'course': course,
-        'lessons': lessons,
+        'lessons': lessons_with_progress,
         'comment_form': comment_form,
         'has_purchased': has_purchased,
         'has_pending_order': has_pending_order,
         'is_teacher': is_teacher,
+        'course_progress': course_progress,
     }
     return render(request, 'courses/course_detail.html', context)
 
@@ -383,17 +413,109 @@ def category_courses(request, slug):
         for order in pending_orders:
             pending_course_ids.extend(order.courses.values_list('id', flat=True))
 
-    paginator = Paginator(courses, 4)
-    page = request.GET.get('page')
-    courses = paginator.get_page(page)
+    paginator = Paginator(courses, 8)  # Show 8 courses per page
+    page = request.GET.get('page', 1)  # Default to page 1
+    page_obj = paginator.get_page(page)
+
+    # محاسبه درصد پیشرفت برای هر دوره
+    courses_with_progress = []
+    for course in page_obj:
+        progress = 0
+        if logged_user.is_authenticated and (course.id in purchased_course_ids or course.teacher == logged_user):
+            progress = course.get_progress_for_user(logged_user)
+        courses_with_progress.append({
+            'course': course,
+            'progress': progress
+        })
 
     return render(request, 'index.html', {
-        'courses': courses,
+        'page_obj': page_obj,
+        'courses_with_progress': courses_with_progress,
         'logged_user': logged_user,
         'purchased_course_ids': purchased_course_ids,
         'pending_course_ids': pending_course_ids,
         'taught_course_ids': taught_course_ids,
         'selected_category': category,
     })
+
+
+@login_required
+def mark_lesson_progress(request, lesson_id, content_type):
+    if request.method == 'POST':
+        try:
+            lesson = get_object_or_404(Lesson, id=lesson_id)
+            course = lesson.course
+            
+            # بررسی دسترسی کاربر
+            has_access = (
+                request.user == course.teacher or
+                OrderItem.objects.filter(
+                    order__user=request.user,
+                    order__status='completed',
+                    course=course
+                ).exists()
+            )
+            
+            if not has_access:
+                return JsonResponse({
+                    'status': 'error',
+                    'message': 'شما دسترسی لازم برای این عملیات را ندارید'
+                }, status=403)
+            
+            # بررسی نوع محتوا
+            if content_type not in ['video', 'pdf']:
+                return JsonResponse({
+                    'status': 'error',
+                    'message': 'نوع محتوا نامعتبر است'
+                }, status=400)
+            
+            # بررسی وجود فایل مورد نظر
+            if content_type == 'video' and not lesson.video:
+                return JsonResponse({
+                    'status': 'error',
+                    'message': 'این درس ویدیو ندارد'
+                }, status=400)
+            elif content_type == 'pdf' and not lesson.pdf_file:
+                return JsonResponse({
+                    'status': 'error',
+                    'message': 'این درس فایل PDF ندارد'
+                }, status=400)
+            
+            # ثبت پیشرفت
+            progress, created = LessonProgress.objects.get_or_create(
+                user=request.user,
+                lesson=lesson,
+                defaults={
+                    'video_watched': False,
+                    'pdf_read': False
+                }
+            )
+            
+            if content_type == 'video':
+                progress.video_watched = True
+            else:  # pdf
+                progress.pdf_read = True
+            
+            progress.save()
+            
+            # محاسبه درصد پیشرفت کل دوره
+            course_progress = course.get_progress_for_user(request.user)
+            
+            return JsonResponse({
+                'status': 'success',
+                'progress': course_progress,
+                'message': 'پیشرفت با موفقیت ثبت شد'
+            })
+            
+        except Exception as e:
+            return JsonResponse({
+                'status': 'error',
+                'message': f'خطا در ثبت پیشرفت: {str(e)}'
+            }, status=500)
+    
+    return JsonResponse({
+        'status': 'error',
+        'message': 'درخواست نامعتبر'
+    }, status=400)
 
 

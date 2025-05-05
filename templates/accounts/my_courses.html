@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load humanize %}
 
 {% block title %}دوره‌های من{% endblock %}
 
@@ -10,7 +11,8 @@
             
             {% if courses %}
                 <div class="row">
-                    {% for course in courses %}
+                    {% for course_data in courses %}
+                    {% with course=course_data.course progress=course_data.progress %}
                     <div class="col-md-4 mb-4">
                         <div class="card h-100 border-0 shadow-sm">
                             {% if course.image %}
@@ -20,12 +22,32 @@
                                 <h5 class="card-title">{{ course.name }}</h5>
                                 <p class="card-text text-muted small">{{ course.description|truncatechars:100 }}</p>
                                 
-                                <div class="d-grid">
-                                    <a href="{% url 'courses:course_detail' course.slug %}" class="btn btn-primary">
-                                        ادامه دوره
-                                    </a>
+                                <!-- نمایش درصد پیشرفت -->
+                                <div class="d-flex align-items-center w-100 mb-3">
+                                    <div class="progress flex-grow-1" style="height: 10px; border-radius: 1rem; background-color: #e2e8f0;">
+                                        <div class="progress-bar bg-success" role="progressbar" 
+                                             style="width: {{ progress }}%; border-radius: 1rem;" 
+                                             aria-valuenow="{{ progress }}" 
+                                             aria-valuemin="0" 
+                                             aria-valuemax="100">
+                                        </div>
+                                    </div>
+                                    <span class="ms-2 text-success fw-bold">{{ progress }}%</span>
                                 </div>
+                                
+                                <a href="{% url 'courses:course_detail' course.slug %}" class="btn btn-success btn-sm w-100">
+                                    <i class="fas fa-play me-1"></i>
+                                    ادامه یادگیری
+                                </a>
                             </div>
+                        </div>
+                    </div>
+                    {% endwith %}
+                    {% empty %}
+                    <div class="col-12">
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            شما هنوز هیچ دوره‌ای خریداری نکرده‌اید.
                         </div>
                     </div>
                     {% endfor %}
