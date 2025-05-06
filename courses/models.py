@@ -49,18 +49,35 @@ class Category(models.Model):
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True)
     slug = models.SlugField(unique=True)
+    parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='children')
 
     class Meta:
         verbose_name = 'Category'
         verbose_name_plural = 'Categories'
 
     def __str__(self):
+        if self.parent:
+            return f"{self.parent.name} > {self.name}"
         return self.name
 
     def save(self, *args, **kwargs):
         if not self.slug:
             self.slug = persian_slugify(self.name)
         super().save(*args, **kwargs)
+
+    @property
+    def is_parent(self):
+        return self.parent is None
+
+    @property
+    def has_children(self):
+        return self.children.exists()
+
+    def get_all_courses(self):
+        """Get all courses in this category and its children"""
+        if self.has_children:
+            return Course.objects.filter(category__in=self.children.all() | Category.objects.filter(pk=self.pk))
+        return self.courses.all()
 
 
 class Teacher(models.Model):
@@ -126,7 +143,7 @@ class Course(models.Model):
         
         total_lessons = self.lessons.count()
         if total_lessons == 0:
-            return 100  # اگر درسی وجود نداشت، پیشرفت 100٪ است
+            return 0  # اگر درسی وجود نداشت، پیشرفت 0 است
         
         completed_lessons = 0
         for lesson in self.lessons.all():

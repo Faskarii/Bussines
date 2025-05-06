@@ -94,6 +94,34 @@
                 padding: 0.7rem 1rem;
             }
         }
+        .dropdown-submenu {
+            position: relative;
+        }
+        
+        .dropdown-submenu .dropdown-menu {
+            top: 0;
+            right: 100%;
+            margin-top: -1px;
+            display: none;
+        }
+        
+        .dropdown-submenu:hover > .dropdown-menu {
+            display: block;
+        }
+        
+        .dropdown-submenu > a:after {
+            display: block;
+            content: " ";
+            float: right;
+            width: 0;
+            height: 0;
+            border-color: transparent;
+            border-style: solid;
+            border-width: 5px 5px 5px 0;
+            border-right-color: #cccccc;
+            margin-top: 5px;
+            margin-right: -10px;
+        }
     </style>
     <title>{% block title %}{% endblock %}</title>
 </head>
@@ -107,9 +135,29 @@
                         دسته‌بندی‌ها
                     </a>
                     <ul class="dropdown-menu" aria-labelledby="categoriesDropdown">
-                        {% for category in categories %}
-                            {% if category.slug %}
-                                <li><a class="dropdown-item" href="{% url 'courses:category_courses' category.slug %}">{{ category.name }}</a></li>
+                        {% for parent_category in parent_categories %}
+                            {% if parent_category.slug %}
+                                <li class="dropdown-submenu">
+                                    <a class="dropdown-item" href="{% url 'courses:category_courses' parent_category.slug %}">
+                                        {{ parent_category.name }}
+                                        {% if parent_category.has_children %}
+                                            <i class="fas fa-chevron-left float-start mt-1"></i>
+                                        {% endif %}
+                                    </a>
+                                    {% if parent_category.has_children %}
+                                        <ul class="dropdown-menu dropdown-menu-end">
+                                            {% for child in parent_category.children.all %}
+                                                {% if child.slug %}
+                                                    <li>
+                                                        <a class="dropdown-item" href="{% url 'courses:category_courses' child.slug %}">
+                                                            {{ child.name }}
+                                                        </a>
+                                                    </li>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </ul>
+                                    {% endif %}
+                                </li>
                             {% endif %}
                         {% endfor %}
                     </ul>

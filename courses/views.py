@@ -407,7 +407,14 @@ def delete_lesson(request, lesson_id):
 
 def category_courses(request, slug):
     category = get_object_or_404(Category, slug=slug)
-    courses = Course.objects.filter(is_published=True, category=category, slug__isnull=False).exclude(slug='').prefetch_related('teacher', 'liked_by')
+    
+    # Get courses based on whether this is a parent or child category
+    if category.is_parent:
+        courses = category.get_all_courses()
+    else:
+        courses = Course.objects.filter(is_published=True, category=category, slug__isnull=False).exclude(slug='')
+    
+    courses = courses.filter(is_published=True).exclude(slug='').prefetch_related('teacher', 'liked_by')
     logged_user = request.user
 
     purchased_course_ids = []
@@ -438,6 +445,9 @@ def category_courses(request, slug):
             'progress': progress
         })
 
+    # Get child categories if this is a parent category
+    child_categories = category.children.all() if category.is_parent else None
+
     return render(request, 'index.html', {
         'page_obj': page_obj,
         'courses_with_progress': courses_with_progress,
@@ -446,6 +456,7 @@ def category_courses(request, slug):
         'pending_course_ids': pending_course_ids,
         'taught_course_ids': taught_course_ids,
         'selected_category': category,
+        'child_categories': child_categories,
     })
 
 

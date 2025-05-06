@@ -10,6 +10,7 @@ class Exam(models.Model):
     title = models.CharField(max_length=200)
     description = models.TextField()
     passing_score = models.IntegerField(default=80)
+    question_count = models.PositiveIntegerField(default=10, help_text="تعداد سوالات نمایش داده شده در آزمون")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

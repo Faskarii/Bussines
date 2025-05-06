@@ -6,7 +6,11 @@ from .models import Category, Teacher, Course, Lesson, Order, persian_slugify
 class CategoryForm(forms.ModelForm):
     class Meta:
         model = Category
-        fields = ['name']
+        fields = ['name', 'description']
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control'}),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+        }
 
 
 class TeacherForm(forms.ModelForm):

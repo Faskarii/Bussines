@@ -46,7 +46,8 @@ def submit_exam(request, course_id):
             if question_id.startswith('question_'):
                 question_id = question_id.replace('question_', '')
                 question = get_object_or_404(Question, id=question_id)
-                if question.correct_choice_id == int(answer_id):
+                selected_choice = get_object_or_404(Choice, id=int(answer_id))
+                if selected_choice.question_id == question.id and selected_choice.is_correct:
                     correct_answers += 1
         
         score = (correct_answers / total_questions) * 100
