@@ -56,3 +56,18 @@ class User(AbstractBaseUser, PermissionsMixin):
     def __str__(self):
         return f"{self.first_name} {self.last_name}"
 
+
+class InstructorRequest(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_approved = models.BooleanField(default=False)
+
+    def save(self, *args, **kwargs):
+        if self.is_approved:
+            self.user.is_staff = True
+            self.user.save(update_fields=['is_staff'])
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"Instructor request for {self.user.username}"
+

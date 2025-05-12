@@ -70,6 +70,11 @@ class SignUpForm(UserCreationForm):
         }
     )
 
+    is_instructor_request = forms.BooleanField(
+        required=False,
+        label='درخواست ثبت نام به عنوان مدرس'
+    )
+
     password1 = forms.CharField(
         widget=forms.PasswordInput,
         error_messages={
@@ -86,7 +91,7 @@ class SignUpForm(UserCreationForm):
 
     class Meta:
         model = User
-        fields = ('username', 'email', 'first_name', 'last_name', 'password1', 'password2')
+        fields = ('username', 'email', 'first_name', 'last_name', 'password1', 'password2', 'is_instructor_request')
     def clean_password1(self):
         password1 = self.cleaned_data.get('password1')
         try:

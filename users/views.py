@@ -5,11 +5,13 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib import messages
 from django.urls import reverse
+from django.core.mail import send_mail
+from django.conf import settings
 
 from courses.models import Order
 from .forms import SignUpForm
 from .forms import LoginForm
-from .models import User
+from .models import User, InstructorRequest
 
 
 def signup(request):
@@ -18,7 +20,25 @@ def signup(request):
         if form.is_valid():
             try:
                 user = form.save()
-                messages.success(request, 'ثبت‌نام شما با موفقیت انجام شد. اکنون می‌توانید وارد شوید.')
+                
+                # Handle instructor request
+                if form.cleaned_data.get('is_instructor_request'):
+                    instructor_request = InstructorRequest.objects.create(user=user)
+                    
+                    # Send email notification to admin
+                    admin_email = getattr(settings, 'ADMIN_EMAIL', 'admin@example.com')
+                    send_mail(
+                        'درخواست جدید مدرس',
+                        f'کاربر {user.username} درخواست ثبت نام به عنوان مدرس را دارد.',
+                        settings.DEFAULT_FROM_EMAIL,
+                        [admin_email],
+                        fail_silently=True,
+                    )
+                    
+                    messages.success(request, 'ثبت‌نام شما با موفقیت انجام شد. درخواست مدرس شدن شما برای ادمین ارسال شد.')
+                else:
+                    messages.success(request, 'ثبت‌نام شما با موفقیت انجام شد. اکنون می‌توانید وارد شوید.')
+                
                 return redirect('login')
             except Exception as e:
                 messages.error(request, 'خطا در ثبت‌نام. لطفاً دوباره تلاش کنید.')
